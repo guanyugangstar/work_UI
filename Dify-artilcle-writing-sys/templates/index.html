@@ -551,8 +551,12 @@
                         }
                         
                         console.log('文档内容提取成功，显示内容');
-                        // 只显示文档内容，不调用PPT生成接口
-                        document.getElementById('stream_result').innerText = documentContent;
+                        // 使用markdown渲染显示文档内容
+                        if (typeof marked !== 'undefined') {
+                            document.getElementById('stream_result').innerHTML = marked.parse(documentContent);
+                        } else {
+                            document.getElementById('stream_result').innerText = documentContent;
+                        }
                         
                         // 保存到全局变量，供模态框中的"制作PPT"按钮使用
                         window.last_full_markdown = documentContent;
@@ -705,7 +709,7 @@
                     <input type="file" id="imitate_article" name="imitate_article" accept=".pdf,.doc,.docx,.txt,.md,.markdown,.html,.xls,.xlsx,.ppt,.pptx,.xml,.epub,.csv,.eml,.msg">
                 </div>
                 <div class="form-group">
-                    <label for="Superior_docs">上级文件或ppt原文（可选）</label>
+                    <div style="display: block; margin-bottom: 8px; font-size: 15px;">上级文件或欲生成PPT的原文（可选）</div>
                     <input type="file" id="Superior_docs" name="Superior_docs" accept=".pdf,.doc,.docx,.txt,.md,.markdown,.html,.xls,.xlsx,.ppt,.pptx,.xml,.epub,.csv,.eml,.msg,.jpg,.jpeg,.png,.gif,.webp,.svg">
                 </div>
             </div>

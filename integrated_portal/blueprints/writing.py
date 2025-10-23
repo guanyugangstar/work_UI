@@ -71,6 +71,31 @@ def file_to_dify_input(file, file_id):
         'transfer_method': 'local_file'
     }
 
+def extract_txt_text(file_path):
+    """
+    提取txt文件的文本内容
+    """
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read().strip()
+            print(f"提取的TXT文件内容长度: {len(content)}")
+            print(f"提取的TXT文件内容前100字符: {content[:100]}")
+            return content if content else None
+    except UnicodeDecodeError:
+        # 如果UTF-8解码失败，尝试其他编码
+        try:
+            with open(file_path, 'r', encoding='gbk') as f:
+                content = f.read().strip()
+                print(f"使用GBK编码提取的TXT文件内容长度: {len(content)}")
+                print(f"使用GBK编码提取的TXT文件内容前100字符: {content[:100]}")
+                return content if content else None
+        except Exception as e:
+            print(f"使用GBK编码提取txt文本时出错: {e}")
+            return None
+    except Exception as e:
+        print(f"提取txt文本时出错: {e}")
+        return None
+
 def extract_docx_text(file_path):
     """
     提取docx文档的文本内容
@@ -140,18 +165,27 @@ def upload():
             temp_path = os.path.join('static', file.filename)
             file.save(temp_path)
             
-            # 如果是docx文件，提取文本内容
+            # 根据文件类型提取文本内容
             if file.filename.lower().endswith('.docx'):
-                print(f"开始提取 {field} 的文档内容...")
+                print(f"开始提取 {field} 的DOCX文档内容...")
                 extracted_text = extract_docx_text(temp_path)
                 if extracted_text:
                     file_contents[field] = extracted_text
-                    print(f"{field} 文档内容提取成功，长度: {len(extracted_text)}")
+                    print(f"{field} DOCX文档内容提取成功，长度: {len(extracted_text)}")
                 else:
-                    file_contents[field] = "无法提取文档内容"
-                    print(f"{field} 文档内容提取失败")
+                    file_contents[field] = "无法提取DOCX文档内容"
+                    print(f"{field} DOCX文档内容提取失败")
+            elif file.filename.lower().endswith('.txt'):
+                print(f"开始提取 {field} 的TXT文件内容...")
+                extracted_text = extract_txt_text(temp_path)
+                if extracted_text:
+                    file_contents[field] = extracted_text
+                    print(f"{field} TXT文件内容提取成功，长度: {len(extracted_text)}")
+                else:
+                    file_contents[field] = "无法提取TXT文件内容"
+                    print(f"{field} TXT文件内容提取失败")
             else:
-                print(f"{field} 不是docx文件，跳过内容提取")
+                print(f"{field} 不是支持的文档格式，跳过内容提取")
             
             try:
                 url = f"{DIFY_API_BASE_URL}/files/upload"
