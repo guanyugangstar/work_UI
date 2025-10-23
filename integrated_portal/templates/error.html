@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+
+{% block title %}错误 {{ error_code }} - 统一门户系统{% endblock %}
+
+{% block content %}
+<div class="error-container">
+    <div class="error-content">
+        <div class="error-icon">
+            {% if error_code == 404 %}
+                <i class="fas fa-search"></i>
+            {% elif error_code == 500 %}
+                <i class="fas fa-exclamation-triangle"></i>
+            {% elif error_code == 502 or error_code == 503 %}
+                <i class="fas fa-server"></i>
+            {% else %}
+                <i class="fas fa-exclamation-circle"></i>
+            {% endif %}
+        </div>
+        
+        <div class="error-info">
+            <h1 class="error-code">{{ error_code }}</h1>
+            <h2 class="error-title">
+                {% if error_code == 404 %}
+                    页面未找到
+                {% elif error_code == 500 %}
+                    内部服务器错误
+                {% elif error_code == 502 %}
+                    网关错误
+                {% elif error_code == 503 %}
+                    服务不可用
+                {% else %}
+                    发生错误
+                {% endif %}
+            </h2>
+            <p class="error-message">{{ error_message }}</p>
+            
+            <div class="error-suggestions">
+                {% if error_code == 404 %}
+                    <p>可能的原因：</p>
+                    <ul>
+                        <li>您访问的页面不存在</li>
+                        <li>页面地址输入错误</li>
+                        <li>页面已被移动或删除</li>
+                    </ul>
+                {% elif error_code == 500 %}
+                    <p>服务器遇到了一个错误，请稍后重试。</p>
+                {% elif error_code == 502 or error_code == 503 %}
+                    <p>可能的原因：</p>
+                    <ul>
+                        <li>目标服务暂时不可用</li>
+                        <li>服务正在维护中</li>
+                        <li>网络连接问题</li>
+                    </ul>
+                {% endif %}
+            </div>
+            
+            <div class="error-actions">
+                <button onclick="history.back()" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i>
+                    返回上一页
+                </button>
+                <a href="{{ url_for('index') }}" class="btn btn-primary">
+                    <i class="fas fa-home"></i>
+                    返回首页
+                </a>
+                <button onclick="location.reload()" class="btn btn-outline">
+                    <i class="fas fa-sync-alt"></i>
+                    重新加载
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="error-footer">
+        <p>如果问题持续存在，请联系系统管理员。</p>
+        <p class="error-time">错误时间: <span id="errorTime"></span></p>
+    </div>
+</div>
+
+<style>
+.error-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    padding: 2rem;
+    text-align: center;
+}
+
+.error-content {
+    max-width: 600px;
+    margin-bottom: 2rem;
+}
+
+.error-icon {
+    font-size: 4rem;
+    color: var(--danger-color);
+    margin-bottom: 1rem;
+}
+
+.error-code {
+    font-size: 6rem;
+    font-weight: bold;
+    color: var(--danger-color);
+    margin: 0;
+    line-height: 1;
+}
+
+.error-title {
+    font-size: 2rem;
+    color: var(--text-primary);
+    margin: 0.5rem 0;
+}
+
+.error-message {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+}
+
+.error-suggestions {
+    background: var(--background-secondary);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    text-align: left;
+}
+
+.error-suggestions p {
+    margin: 0 0 0.5rem 0;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.error-suggestions ul {
+    margin: 0;
+    padding-left: 1.5rem;
+}
+
+.error-suggestions li {
+    margin-bottom: 0.5rem;
+    color: var(--text-secondary);
+}
+
+.error-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.error-actions .btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--border-radius);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.error-actions .btn-primary {
+    background: var(--primary-color);
+    color: white;
+}
+
+.error-actions .btn-primary:hover {
+    background: var(--primary-hover);
+    transform: translateY(-2px);
+}
+
+.error-actions .btn-secondary {
+    background: var(--text-secondary);
+    color: white;
+}
+
+.error-actions .btn-secondary:hover {
+    background: var(--text-primary);
+    transform: translateY(-2px);
+}
+
+.error-actions .btn-outline {
+    background: transparent;
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
+}
+
+.error-actions .btn-outline:hover {
+    background: var(--primary-color);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.error-footer {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.error-footer p {
+    margin: 0.5rem 0;
+}
+
+.error-time {
+    font-family: monospace;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .error-container {
+        padding: 1rem;
+    }
+    
+    .error-code {
+        font-size: 4rem;
+    }
+    
+    .error-title {
+        font-size: 1.5rem;
+    }
+    
+    .error-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .error-actions .btn {
+        width: 100%;
+        max-width: 200px;
+    }
+}
+
+/* 动画效果 */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.error-content {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.error-footer {
+    animation: fadeInUp 0.6s ease-out 0.2s both;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 显示错误时间
+    const errorTimeElement = document.getElementById('errorTime');
+    if (errorTimeElement) {
+        errorTimeElement.textContent = new Date().toLocaleString('zh-CN');
+    }
+});
+</script>
+{% endblock %}

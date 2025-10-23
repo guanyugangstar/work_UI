@@ -1,0 +1,486 @@
+{% extends "base.html" %}
+
+{% block title %}统一门户系统 - 集成管理平台{% endblock %}
+
+{% block content %}
+<div class="portal-container" role="application" aria-label="统一门户系统">
+    <!-- 跳转链接 -->
+    <a href="#main-content" class="skip-link">跳转到主要内容</a>
+    
+    <!-- 标签页导航 -->
+    <nav class="tab-navigation" role="tablist" aria-label="系统标签页导航">
+        <div class="tab-list" id="tabList" role="tablist" aria-live="polite">
+            <!-- 标签页将通过JavaScript动态生成 -->
+        </div>
+        <div class="tab-actions" role="toolbar" aria-label="标签页操作">
+            <button id="refreshBtn" 
+                    class="btn btn-icon" 
+                    title="刷新当前页面" 
+                    aria-label="刷新当前页面"
+                    type="button">
+                <i class="fas fa-sync-alt" aria-hidden="true"></i>
+                <span class="sr-only">刷新</span>
+            </button>
+            <button id="fullscreenBtn" 
+                    class="btn btn-icon" 
+                    title="全屏模式" 
+                    aria-label="切换全屏模式"
+                    type="button">
+                <i class="fas fa-expand" aria-hidden="true"></i>
+                <span class="sr-only">全屏</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- 内容区域 -->
+    <main class="content-area" id="main-content" role="main">
+        <!-- 欢迎页面 -->
+        <section id="welcomePanel" 
+                 class="welcome-panel active" 
+                 role="tabpanel" 
+                 aria-labelledby="welcome-tab"
+                 tabindex="0">
+            <div class="welcome-content">
+                <header class="welcome-header">
+                    <i class="fas fa-rocket" aria-hidden="true"></i>
+                    <h1 id="welcome-title">欢迎使用统一门户系统</h1>
+                    <p>集成四个子系统的统一办公平台</p>
+                </header>
+                
+                <section class="system-grid" 
+                         role="grid" 
+                         aria-label="系统列表"
+                         aria-describedby="system-grid-desc">
+                    <div id="system-grid-desc" class="sr-only">
+                        四个可用的子系统，使用方向键导航，回车键打开
+                    </div>
+                    
+                    <article class="system-card" 
+                             data-system="writing" 
+                             role="gridcell" 
+                             tabindex="0"
+                             aria-labelledby="writing-title"
+                             aria-describedby="writing-desc writing-status">
+                        <div class="card-icon" aria-hidden="true">📝</div>
+                        <h3 id="writing-title">智能写作系统</h3>
+                        <p id="writing-desc">公文/文章自动生成与辅助写作</p>
+                        <div class="card-status" 
+                             data-status="unknown" 
+                             id="writing-status"
+                             role="status" 
+                             aria-live="polite">
+                            <i class="fas fa-circle" aria-hidden="true"></i>
+                            <span>检查中...</span>
+                        </div>
+                        <div class="card-actions">
+                            <button class="btn btn-start btn-sm" 
+                                    data-system="writing" 
+                                    title="启动服务"
+                                    aria-label="启动智能写作系统">
+                                <i class="fas fa-play"></i>
+                                <span>启动</span>
+                            </button>
+                            <button class="btn btn-stop btn-sm" 
+                                    data-system="writing" 
+                                    title="停止服务"
+                                    aria-label="停止智能写作系统"
+                                    style="display: none;">
+                                <i class="fas fa-stop"></i>
+                                <span>停止</span>
+                            </button>
+                        </div>
+                    </article>
+                    
+                    <article class="system-card" 
+                             data-system="qa_sys" 
+                             role="gridcell" 
+                             tabindex="0"
+                             aria-labelledby="qa_sys-title"
+                             aria-describedby="qa_sys-desc qa_sys-status">
+                        <div class="card-icon" aria-hidden="true">🏢</div>
+                        <h3 id="qa_sys-title">房产业务查询系统</h3>
+                        <p id="qa_sys-desc">房产局审批处业务智能问答</p>
+                        <div class="card-status" 
+                             data-status="unknown" 
+                             id="qa_sys-status"
+                             role="status" 
+                             aria-live="polite">
+                            <i class="fas fa-circle" aria-hidden="true"></i>
+                            <span>检查中...</span>
+                        </div>
+                        <div class="card-actions">
+                            <button class="btn btn-start btn-sm" 
+                                    data-system="qa_sys" 
+                                    title="启动服务"
+                                    aria-label="启动房产业务查询系统">
+                                <i class="fas fa-play"></i>
+                                <span>启动</span>
+                            </button>
+                            <button class="btn btn-stop btn-sm" 
+                                    data-system="qa_sys" 
+                                    title="停止服务"
+                                    aria-label="停止房产业务查询系统"
+                                    style="display: none;">
+                                <i class="fas fa-stop"></i>
+                                <span>停止</span>
+                            </button>
+                        </div>
+                    </article>
+                    
+                    <article class="system-card" 
+                             data-system="case2pg" 
+                             role="gridcell" 
+                             tabindex="0"
+                             aria-labelledby="case2pg-title"
+                             aria-describedby="case2pg-desc case2pg-status">
+                        <div class="card-icon" aria-hidden="true">📊</div>
+                        <h3 id="case2pg-title">数据档案系统</h3>
+                        <p id="case2pg-desc">智能文件归档与数据库查询</p>
+                        <div class="card-status" 
+                             data-status="unknown" 
+                             id="case2pg-status"
+                             role="status" 
+                             aria-live="polite">
+                            <i class="fas fa-circle" aria-hidden="true"></i>
+                            <span>检查中...</span>
+                        </div>
+                        <div class="card-actions">
+                            <button class="btn btn-start btn-sm" 
+                                    data-system="case2pg" 
+                                    title="启动服务"
+                                    aria-label="启动数据档案系统">
+                                <i class="fas fa-play"></i>
+                                <span>启动</span>
+                            </button>
+                            <button class="btn btn-stop btn-sm" 
+                                    data-system="case2pg" 
+                                    title="停止服务"
+                                    aria-label="停止数据档案系统"
+                                    style="display: none;">
+                                <i class="fas fa-stop"></i>
+                                <span>停止</span>
+                            </button>
+                        </div>
+                    </article>
+                    
+                    <article class="system-card" 
+                             data-system="censor" 
+                             role="gridcell" 
+                             tabindex="0"
+                             aria-labelledby="censor-title"
+                             aria-describedby="censor-desc censor-status">
+                        <div class="card-icon" aria-hidden="true">🔍</div>
+                        <h3 id="censor-title">文件审查系统</h3>
+                        <p id="censor-desc">智能文件和合同审查</p>
+                        <div class="card-status" 
+                             data-status="unknown" 
+                             id="censor-status"
+                             role="status" 
+                             aria-live="polite">
+                            <i class="fas fa-circle" aria-hidden="true"></i>
+                            <span>检查中...</span>
+                        </div>
+                        <div class="card-actions">
+                            <button class="btn btn-start btn-sm" 
+                                    data-system="censor" 
+                                    title="启动服务"
+                                    aria-label="启动文件审查系统">
+                                <i class="fas fa-play"></i>
+                                <span>启动</span>
+                            </button>
+                            <button class="btn btn-stop btn-sm" 
+                                    data-system="censor" 
+                                    title="停止服务"
+                                    aria-label="停止文件审查系统"
+                                    style="display: none;">
+                                <i class="fas fa-stop"></i>
+                                <span>停止</span>
+                            </button>
+                        </div>
+                    </article>
+                </section>
+                
+                <div class="welcome-actions" role="group" aria-label="主要操作">
+                    <button id="startBtn" 
+                            class="btn btn-primary btn-large"
+                            type="button"
+                            aria-describedby="start-btn-desc">
+                        <i class="fas fa-compass" aria-hidden="true"></i>
+                        系统导览
+                    </button>
+                    <div id="start-btn-desc" class="sr-only">
+                        查看各系统的功能介绍和使用指南
+                    </div>
+                    
+                    <button id="checkAllBtn" 
+                            class="btn btn-outline btn-large"
+                            type="button"
+                            aria-describedby="check-btn-desc">
+                        <i class="fas fa-heartbeat" aria-hidden="true"></i>
+                        检查所有服务
+                    </button>
+                    <div id="check-btn-desc" class="sr-only">
+                        检查所有子系统的运行状态
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- iframe容器 -->
+        <div id="iframeContainer" 
+             class="iframe-container" 
+             role="tabpanel" 
+             aria-label="子系统内容区域">
+            <!-- iframe将通过JavaScript动态创建 -->
+        </div>
+    </main>
+</div>
+
+<!-- 系统信息面板 -->
+<aside id="systemInfo" 
+       class="system-info" 
+       role="complementary" 
+       aria-label="系统状态信息"
+       aria-live="polite">
+    <h2 class="sr-only">系统状态</h2>
+    <div class="info-item">
+        <span class="label" id="current-system-label">当前系统:</span>
+        <span id="currentSystem" 
+              class="value" 
+              role="status"
+              aria-labelledby="current-system-label">欢迎页面</span>
+    </div>
+    <div class="info-item">
+        <span class="label" id="load-time-label">加载时间:</span>
+        <span id="loadTime" 
+              class="value" 
+              role="status"
+              aria-labelledby="load-time-label">-</span>
+    </div>
+    <div class="info-item">
+        <span class="label" id="connection-status-label">状态:</span>
+        <span id="connectionStatus" 
+              class="value status-ready" 
+              role="status"
+              aria-labelledby="connection-status-label"
+              aria-live="polite">就绪</span>
+    </div>
+</aside>
+
+<!-- 系统导览模态框 -->
+<div id="systemGuideModal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="guideModalTitle">
+    <div class="modal-overlay"></div>
+    <div class="guide-modal-content">
+        <div class="guide-modal-header">
+            <h2 id="guideModalTitle">
+                <i class="fas fa-compass"></i>
+                系统导览
+            </h2>
+            <button class="modal-close" aria-label="关闭导览">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="guide-modal-body">
+            <div class="guide-intro">
+                <h3>欢迎使用统一门户系统</h3>
+                <p>以下是各个系统的功能介绍和使用指南，选择您需要的系统开始体验</p>
+            </div>
+            
+            <div class="guide-systems">
+                <!-- 智能文件撰写系统 -->
+                <div class="guide-system" data-system="writing">
+                    <div class="guide-system-header">
+                        <div class="guide-system-icon">📝</div>
+                        <div class="guide-system-title">
+                            <h4>智能写作系统</h4>
+                            <span class="system-status status-stopped">服务未运行</span>
+                        </div>
+                    </div>
+                    <div class="guide-system-content">
+                        <div class="guide-section">
+                            <h5><i class="fas fa-star"></i> 主要功能</h5>
+                            <ul>
+                                <li>基于Dify工作流的智能公文生成</li>
+                                <li>各种类型公文改写与优化</li>
+                                <li>专业数据库查询与在线搜索集成</li>
+                                <li>一键PPT生成（报告转演示文稿）</li>
+                            </ul>
+                        </div>
+                        <div class="guide-section">
+                            <h5><i class="fas fa-lightbulb"></i> 适用场景</h5>
+                            <ul>
+                                <li>自动化文档/文章生成</li>
+                                <li>辅助写作与内容优化</li>
+                                <li>报告制作与演示文稿创建</li>
+                                <li>多类型文档批量处理</li>
+                            </ul>
+                        </div>
+                        <div class="guide-section">
+                            <h5><i class="fas fa-gem"></i> 独特优势</h5>
+                            <ul>
+                                <li>集成Dify AI工作流引擎</li>
+                                <li>支持SVG可视化图表生成</li>
+                                <li>实时数据查询与内容融合</li>
+                                <li>一站式文档到演示转换</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <button class="guide-start btn-primary" data-system="writing">
+                        <i class="fas fa-rocket"></i> 立即体验
+                    </button>
+                </div>
+
+                <!-- 业务查询系统 -->
+                <div class="guide-system" data-system="qa_sys">
+                    <div class="guide-system-header">
+                        <div class="guide-system-icon">🏢</div>
+                        <div class="guide-system-title">
+                            <h4>房产业务查询系统</h4>
+                            <span class="system-status status-running">服务正常运行</span>
+                        </div>
+                    </div>
+                    <div class="guide-system-content">
+                        <div class="guide-section">
+                            <h5><i class="fas fa-star"></i> 主要功能</h5>
+                            <ul>
+                                <li>房产业务智能问答</li>
+                                <li>语音输入与文字查询</li>
+                                <li>专业知识库检索</li>
+                                <li>审批流程指导</li>
+                            </ul>
+                        </div>
+                        <div class="guide-section">
+                            <h5><i class="fas fa-lightbulb"></i> 适用场景</h5>
+                            <ul>
+                                <li>南京市房产局审批处业务咨询</li>
+                                <li>处室工作查询</li>
+                                <li>政策法规解读</li>
+                                <li>办事指南与材料清单</li>
+                            </ul>
+                        </div>
+                        <div class="guide-section">
+                            <h5><i class="fas fa-gem"></i> 独特优势</h5>
+                            <ul>
+                                <li>专业房产审批和法规领域定制</li>
+                                <li>现代化响应式设计</li>
+                                <li>语音交互支持</li>
+                                <li>性能优化的静态页面</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <button class="guide-start btn-success" data-system="qa_sys">
+                        <i class="fas fa-external-link-alt"></i> 直接打开
+                    </button>
+                </div>
+
+                <!-- 数据处理系统 -->
+                <div class="guide-system" data-system="case2pg">
+                    <div class="guide-system-header">
+                        <div class="guide-system-icon">📊</div>
+                        <div class="guide-system-title">
+                            <h4>数据档案系统</h4>
+                            <span class="system-status status-warning">服务运行但不健康</span>
+                        </div>
+                    </div>
+                    <div class="guide-system-content">
+                        <div class="guide-section">
+                            <h5><i class="fas fa-star"></i> 主要功能</h5>
+                            <ul>
+                                <li>智能涉法案卷、合同处理与AI分类</li>
+                                <li>基于分类结果的数据库查询</li>
+                                <li>实时流式数据响应(SSE)</li>
+                                <li>PostgreSQL连接池管理</li>
+                            </ul>
+                        </div>
+                        <div class="guide-section">
+                            <h5><i class="fas fa-lightbulb"></i> 适用场景</h5>
+                            <ul>
+                                <li>文件智能分类处理</li>
+                                <li>文档内容自动化数据库查询</li>
+                                <li>大批量文件处理与分析</li>
+                                <li>实时数据流处理与监控</li>
+                            </ul>
+                        </div>
+                        <div class="guide-section">
+                            <h5><i class="fas fa-gem"></i> 独特优势</h5>
+                            <ul>
+                                <li>集成Dify AI工作流引擎</li>
+                                <li>完整的日志监控系统</li>
+                                <li>多环境配置支持</li>
+                                <li>健康检查与性能监控</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <button class="guide-start btn-primary" data-system="case2pg">
+                        <i class="fas fa-rocket"></i> 立即体验
+                    </button>
+                </div>
+
+                <!-- 文件审查系统 -->
+                <div class="guide-system" data-system="censor">
+                    <div class="guide-system-header">
+                        <div class="guide-system-icon">🔍</div>
+                        <div class="guide-system-title">
+                            <h4>文件审查系统</h4>
+                            <span class="system-status status-running">服务正常运行</span>
+                        </div>
+                    </div>
+                    <div class="guide-system-content">
+                        <div class="guide-section">
+                            <h5><i class="fas fa-star"></i> 主要功能</h5>
+                            <ul>
+                                <li>基于Dify AI的智能文件审查</li>
+                                <li>合同审查（支持甲乙丙方身份）</li>
+                                <li>初审/复审结果分离展示</li>
+                                <li>审查结果Word文档导出</li>
+                            </ul>
+                        </div>
+                        <div class="guide-section">
+                            <h5><i class="fas fa-lightbulb"></i> 适用场景</h5>
+                            <ul>
+                                <li>法律合同智能审查</li>
+                                <li>文档内容合规检测</li>
+                                <li>多方合同条款分析</li>
+                                <li>审查结果文档化管理</li>
+                            </ul>
+                        </div>
+                        <div class="guide-section">
+                            <h5><i class="fas fa-gem"></i> 独特优势</h5>
+                            <ul>
+                                <li>角色定制化审查视角</li>
+                                <li>现代化响应式界面</li>
+                                <li>Markdown格式结果渲染</li>
+                                <li>操作撤销与实时反馈</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <button class="guide-start btn-success" data-system="censor">
+                        <i class="fas fa-external-link-alt"></i> 直接打开
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="guide-modal-footer">
+            <div class="guide-tips">
+                <i class="fas fa-info-circle"></i>
+                提示：点击"立即体验"将自动启动相应服务并打开系统
+            </div>
+            <button class="guide-close-btn modal-close">关闭导览</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/accessibility.js') }}"></script>
+<script src="{{ url_for('static', filename='js/tab-manager.js') }}"></script>
+<script src="{{ url_for('static', filename='js/service-manager.js') }}"></script>
+<script>
+    // 系统卡片点击处理
+    function openSystem(systemName) {
+        if (window.tabManager) {
+            window.tabManager.openTab(systemName);
+        }
+    }
+</script>
+{% endblock %}

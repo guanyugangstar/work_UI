@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}统一门户系统{% endblock %}</title>
+    
+    <!-- 基础样式 -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tabs.css') }}">
+    
+    <!-- 图标字体 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-cube"></i>
+                <span>统一门户系统</span>
+            </div>
+            <div class="header-actions">
+                <button id="healthCheckBtn" class="btn btn-outline">
+                    <i class="fas fa-heartbeat"></i>
+                    系统状态
+                </button>
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i>
+                    <span>管理员</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区域 -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- 底部状态栏 -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="status-info">
+                <span id="systemStatus" class="status-indicator">
+                    <i class="fas fa-circle"></i>
+                    系统运行正常
+                </span>
+            </div>
+            <div class="copyright">
+                <span>&copy; 2024 统一门户系统 - 集成管理平台</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 模态框 -->
+    <div id="healthModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>系统健康状态</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="healthStatus">加载中...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 加载指示器 -->
+    <div id="loadingIndicator" class="loading-indicator">
+        <div class="spinner"></div>
+        <span>加载中...</span>
+    </div>
+
+    <!-- 通知容器 -->
+    <div id="notification-container"></div>
+
+    <!-- 基础脚本 -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

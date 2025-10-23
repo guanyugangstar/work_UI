@@ -1,0 +1,352 @@
+{% extends "base.html" %}
+
+{% block title %}无障碍功能测试{% endblock %}
+
+{% block content %}
+<div class="accessibility-test-container">
+    <header>
+        <h1>无障碍功能测试页面</h1>
+        <p>此页面用于测试系统的无障碍访问性功能</p>
+    </header>
+
+    <nav aria-label="测试导航">
+        <ul>
+            <li><a href="#keyboard-test">键盘导航测试</a></li>
+            <li><a href="#screen-reader-test">屏幕阅读器测试</a></li>
+            <li><a href="#focus-test">焦点管理测试</a></li>
+            <li><a href="#aria-test">ARIA 属性测试</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <section id="keyboard-test" aria-labelledby="keyboard-heading">
+            <h2 id="keyboard-heading">键盘导航测试</h2>
+            <p>使用 Tab 键在以下元素间导航：</p>
+            <div class="test-grid" role="grid" aria-label="测试网格">
+                <div class="test-item" role="gridcell" tabindex="0">项目 1</div>
+                <div class="test-item" role="gridcell" tabindex="-1">项目 2</div>
+                <div class="test-item" role="gridcell" tabindex="-1">项目 3</div>
+                <div class="test-item" role="gridcell" tabindex="-1">项目 4</div>
+            </div>
+            <p>使用方向键在网格中导航，Enter 键激活项目</p>
+        </section>
+
+        <section id="screen-reader-test" aria-labelledby="sr-heading">
+            <h2 id="sr-heading">屏幕阅读器测试</h2>
+            <div aria-live="polite" id="live-region">
+                <p>这是一个实时区域，内容会被屏幕阅读器自动读出</p>
+            </div>
+            <button onclick="updateLiveRegion()">更新实时区域</button>
+            
+            <div aria-live="assertive" id="assertive-region" class="sr-only">
+                <!-- 紧急公告区域 -->
+            </div>
+            <button onclick="announceError()">测试错误公告</button>
+        </section>
+
+        <section id="focus-test" aria-labelledby="focus-heading">
+            <h2 id="focus-heading">焦点管理测试</h2>
+            <button onclick="openTestModal()">打开测试模态框</button>
+            
+            <div id="testModal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="modal-title" aria-describedby="modal-desc">
+                <div class="modal-content">
+                    <header>
+                        <h3 id="modal-title">测试模态框</h3>
+                        <button class="close" onclick="closeTestModal()" aria-label="关闭模态框">&times;</button>
+                    </header>
+                    <div id="modal-desc">
+                        <p>这是一个测试模态框，用于验证焦点陷阱功能</p>
+                        <button>按钮 1</button>
+                        <button>按钮 2</button>
+                        <input type="text" placeholder="测试输入框">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="aria-test" aria-labelledby="aria-heading">
+            <h2 id="aria-heading">ARIA 属性测试</h2>
+            
+            <div class="status-indicators">
+                <div class="status-item">
+                    <span id="status-label-1">系统状态：</span>
+                    <span role="status" aria-labelledby="status-label-1" aria-live="polite" id="system-status">正常</span>
+                </div>
+                <button onclick="changeStatus()">更改状态</button>
+            </div>
+
+            <div class="progress-test">
+                <label for="test-progress">测试进度：</label>
+                <div role="progressbar" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100" aria-labelledby="progress-label" id="test-progress">
+                    <div class="progress-bar" style="width: 30%"></div>
+                </div>
+                <span id="progress-label">30% 完成</span>
+                <button onclick="updateProgress()">更新进度</button>
+            </div>
+        </section>
+    </main>
+
+    <aside role="complementary" aria-label="测试结果">
+        <h3>测试结果</h3>
+        <div id="test-results" aria-live="polite">
+            <p>等待测试结果...</p>
+        </div>
+        <button onclick="runAccessibilityReport()">生成无障碍报告</button>
+    </aside>
+</div>
+
+<style>
+.accessibility-test-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.test-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.test-item {
+    padding: 20px;
+    border: 2px solid #ddd;
+    border-radius: 5px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.test-item:focus {
+    outline: 3px solid #007cba;
+    outline-offset: 2px;
+    border-color: #007cba;
+    background-color: #f0f8ff;
+}
+
+.test-item:hover {
+    border-color: #007cba;
+    background-color: #f9f9f9;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+.modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 5px;
+    max-width: 500px;
+    width: 90%;
+}
+
+.status-indicators {
+    margin: 20px 0;
+}
+
+.status-item {
+    margin: 10px 0;
+}
+
+.progress-test {
+    margin: 20px 0;
+}
+
+.progress-bar {
+    height: 20px;
+    background-color: #007cba;
+    border-radius: 10px;
+    transition: width 0.3s;
+}
+
+#test-progress {
+    width: 100%;
+    height: 20px;
+    background-color: #f0f0f0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 10px 0;
+}
+
+button {
+    margin: 5px;
+    padding: 10px 15px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    background: #f9f9f9;
+    cursor: pointer;
+}
+
+button:focus {
+    outline: 3px solid #007cba;
+    outline-offset: 2px;
+}
+
+button:hover {
+    background: #e9e9e9;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+</style>
+
+<script>
+let currentProgress = 30;
+let currentStatus = '正常';
+
+function updateLiveRegion() {
+    const region = document.getElementById('live-region');
+    const now = new Date().toLocaleTimeString();
+    region.innerHTML = `<p>实时区域已更新 - ${now}</p>`;
+}
+
+function announceError() {
+    const region = document.getElementById('assertive-region');
+    region.textContent = '这是一个紧急错误公告！';
+    setTimeout(() => {
+        region.textContent = '';
+    }, 3000);
+}
+
+function openTestModal() {
+    const modal = document.getElementById('testModal');
+    modal.classList.add('show');
+    modal.setAttribute('aria-hidden', 'false');
+    
+    // 设置焦点到第一个可聚焦元素
+    setTimeout(() => {
+        const firstButton = modal.querySelector('button');
+        if (firstButton) {
+            firstButton.focus();
+        }
+    }, 100);
+    
+    if (window.accessibilityManager) {
+        window.accessibilityManager.setupModalFocusTrap(modal);
+    }
+}
+
+function closeTestModal() {
+    const modal = document.getElementById('testModal');
+    modal.classList.remove('show');
+    modal.setAttribute('aria-hidden', 'true');
+}
+
+function changeStatus() {
+    const statuses = ['正常', '警告', '错误', '维护中'];
+    const currentIndex = statuses.indexOf(currentStatus);
+    const nextIndex = (currentIndex + 1) % statuses.length;
+    currentStatus = statuses[nextIndex];
+    
+    const statusElement = document.getElementById('system-status');
+    statusElement.textContent = currentStatus;
+}
+
+function updateProgress() {
+    currentProgress = Math.min(currentProgress + 20, 100);
+    if (currentProgress >= 100) {
+        currentProgress = 0;
+    }
+    
+    const progressBar = document.querySelector('.progress-bar');
+    const progressElement = document.getElementById('test-progress');
+    const progressLabel = document.getElementById('progress-label');
+    
+    progressBar.style.width = currentProgress + '%';
+    progressElement.setAttribute('aria-valuenow', currentProgress);
+    progressLabel.textContent = currentProgress + '% 完成';
+}
+
+function runAccessibilityReport() {
+    if (window.accessibilityManager) {
+        const report = window.accessibilityManager.getAccessibilityReport();
+        const resultsDiv = document.getElementById('test-results');
+        
+        resultsDiv.innerHTML = `
+            <h4>无障碍报告</h4>
+            <ul>
+                <li>可聚焦元素数量: ${report.focusableElementsCount}</li>
+                <li>ARIA 元素数量: ${report.ariaElementsCount}</li>
+                <li>实时区域数量: ${report.liveRegionsCount}</li>
+                <li>当前焦点索引: ${report.currentFocusIndex}</li>
+                <li>跳转链接: ${report.hasSkipLink ? '✓' : '✗'}</li>
+                <li>实时公告区域: ${report.hasAriaLiveRegion ? '✓' : '✗'}</li>
+                <li>紧急公告区域: ${report.hasAriaAssertiveRegion ? '✓' : '✗'}</li>
+            </ul>
+        `;
+    } else {
+        document.getElementById('test-results').innerHTML = '<p>无障碍管理器未加载</p>';
+    }
+}
+
+// 网格导航测试
+document.addEventListener('DOMContentLoaded', function() {
+    const gridItems = document.querySelectorAll('.test-item');
+    
+    gridItems.forEach((item, index) => {
+        item.addEventListener('keydown', function(e) {
+            let newIndex = index;
+            
+            switch(e.key) {
+                case 'ArrowRight':
+                    e.preventDefault();
+                    newIndex = Math.min(index + 1, gridItems.length - 1);
+                    break;
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    newIndex = Math.max(index - 1, 0);
+                    break;
+                case 'ArrowDown':
+                    e.preventDefault();
+                    newIndex = Math.min(index + 2, gridItems.length - 1);
+                    break;
+                case 'ArrowUp':
+                    e.preventDefault();
+                    newIndex = Math.max(index - 2, 0);
+                    break;
+                case 'Enter':
+                case ' ':
+                    e.preventDefault();
+                    item.style.backgroundColor = '#007cba';
+                    item.style.color = 'white';
+                    setTimeout(() => {
+                        item.style.backgroundColor = '';
+                        item.style.color = '';
+                    }, 200);
+                    return;
+            }
+            
+            if (newIndex !== index) {
+                gridItems.forEach(item => item.setAttribute('tabindex', '-1'));
+                gridItems[newIndex].setAttribute('tabindex', '0');
+                gridItems[newIndex].focus();
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>智能文件撰写系统</title>
+    <link rel="icon" href="/writing/static/favicon.ico">
+    <style>
+        body {
+            font-family: 'SF Pro Display', 'Helvetica Neue', Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: #f5f5f7;
+            margin: 0;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 48px auto 0 auto;
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 4px 24px 0 rgba(0,0,0,0.08);
+            padding: 36px 32px 32px 32px;
+        }
+        h2 {
+            text-align: center;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 32px;
+        }
+        .form-flex {
+            display: flex;
+            gap: 48px;
+        }
+        .form-section {
+            flex: 1 1 400px;
+            min-width: 350px;
+        }
+        .form-group {
+            margin-bottom: 22px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+        input[type="file"] {
+            margin-top: 8px;
+        }
+        select, input[type="text"], textarea {
+            width: 100%;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            font-size: 15px;
+        }
+        button[type="submit"] {
+            width: 100%;
+            background: #007aff;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 0;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 2px 8px 0 rgba(0,0,0,0.04);
+            transition: background 0.2s;
+        }
+        button[type="submit"]:hover {
+            background: #005ecb;
+        }
+        .generate-ppt-btn {
+            width: 100%;
+            background: #34c759;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 0;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 2px 8px 0 rgba(0,0,0,0.04);
+            transition: background 0.2s;
+            margin-top: 12px;
+        }
+        .generate-ppt-btn:hover {
+            background: #28a745;
+        }
+        .error {
+            color: #d93025;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        .stream-result {
+            background: #fafbfc;
+            border-radius: 14px;
+            box-shadow: 0 2px 8px 0 rgba(0,0,0,0.04);
+            padding: 20px 18px 18px 18px;
+            min-height: 180px;
+            margin-top: 24px;
+            font-size: 16px;
+            color: #222;
+            white-space: pre-wrap;
+            word-break: break-all;
+            height: 220px;
+            max-height: 220px;
+            overflow-y: auto;
+        }
+        @media (max-width: 900px) {
+            .container { max-width: 98vw; padding: 18px 4vw 18px 4vw; }
+            .form-flex { flex-direction: column; gap: 16px; }
+        }
+        /* markdown渲染美化样式，仅作用于.stream-result内部 */
+        .stream-result h1 {
+            font-size: 2em;
+            font-weight: 700;
+            margin: 0.67em 0 0.5em 0;
+            line-height: 1.2;
+            border-bottom: 1.5px solid #eaecef;
+            padding-bottom: 0.2em;
+        }
+        .stream-result h2 {
+            font-size: 1.5em;
+            font-weight: 600;
+            margin: 1em 0 0.5em 0;
+            line-height: 1.25;
+            border-bottom: 1px solid #eaecef;
+            padding-bottom: 0.15em;
+        }
+        .stream-result h3 {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin: 1em 0 0.5em 0;
+            line-height: 1.3;
+        }
+        .stream-result h4, .stream-result h5, .stream-result h6 {
+            font-size: 1em;
+            font-weight: 600;
+            margin: 1em 0 0.5em 0;
+        }
+        .stream-result p {
+            margin: 0.7em 0;
+            line-height: 1.8;
+        }
+        .stream-result ul, .stream-result ol {
+            margin: 0.7em 0 0.7em 1.5em;
+            padding-left: 1.2em;
+        }
+        .stream-result li {
+            margin: 0.3em 0;
+            line-height: 1.7;
+        }
+        .stream-result strong, .stream-result b {
+            font-weight: bold;
+            color: #222;
+        }
+        .stream-result em, .stream-result i {
+            font-style: italic;
+            color: #444;
+        }
+        .stream-result blockquote {
+            border-left: 4px solid #e0e0e0;
+            background: #f7f7f7;
+            margin: 1em 0;
+            padding: 0.7em 1em;
+            color: #555;
+            font-style: italic;
+        }
+        .stream-result pre, .stream-result code {
+            background: #f4f4f4;
+            border-radius: 5px;
+            font-family: 'Fira Mono', 'Consolas', 'Menlo', monospace;
+            font-size: 0.98em;
+            padding: 0.2em 0.5em;
+            color: #2d2d2d;
+        }
+        .stream-result pre {
+            padding: 0.8em 1em;
+            overflow-x: auto;
+        }
+        .stream-result hr {
+            border: none;
+            border-top: 1px solid #eaecef;
+            margin: 1.5em 0;
+        }
+    </style>
+    <script src="/writing/static/marked.min.js" onerror="console.warn('marked加载失败')"></script>
+    <script src="/writing/static/html-docx.js"></script>
+    <script>
+        function updateFormDisplay() {
+            // 改写
+            var ifRewriter = document.getElementById('if_rewriter').value;
+            document.getElementById('origin_article_group').style.display = (ifRewriter === '是') ? 'block' : 'none';
+            // 仿写
+            var ifImitate = document.getElementById('if_imitate_writing').value;
+            document.getElementById('imitate_article_group').style.display = (ifImitate === '是') ? 'block' : 'none';
+            // 数据库
+            var ifDb = document.getElementById('if_database').value;
+            document.getElementById('keyword_database_group').style.display = (ifDb === '是') ? 'block' : 'none';
+            // 联网
+            var ifOnline = document.getElementById('if_online_search').value;
+            document.getElementById('online_search_topic_group').style.display = (ifOnline === '是') ? 'block' : 'none';
+        }
+        function showError(msg) {
+            document.getElementById('error_box').innerText = msg;
+        }
+        function clearError() {
+            document.getElementById('error_box').innerText = '';
+        }
+        function clearResult() {
+            document.getElementById('stream_result').innerText = '';
+        }
+        // 弹窗显示完整内容并支持下载为docx
+        function showFullContent(markdownContent) {
+            let modal = document.getElementById('result_modal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'result_modal';
+                modal.style.position = 'fixed';
+                modal.style.left = '0';
+                modal.style.top = '0';
+                modal.style.width = '100vw';
+                modal.style.height = '100vh';
+                modal.style.background = 'rgba(0,0,0,0.25)';
+                modal.style.display = 'flex';
+                modal.style.alignItems = 'center';
+                modal.style.justifyContent = 'center';
+                modal.style.zIndex = '9999';
+                modal.innerHTML = `
+                  <div id="modal_card" style="background:#fff;max-width:720px;width:96vw;max-height:90vh;overflow:auto;border-radius:14px;box-shadow:0 4px 24px 0 rgba(0,0,0,0.12);padding:32px 28px 24px 28px;position:relative;">
+                    <button id="modal_close" style="position:absolute;top:12px;right:12px;background:none;border:none;font-size:22px;cursor:pointer;">×</button>
+                    <button id="modal_download" style="position:absolute;top:12px;left:12px;background:#007aff;color:#fff;border:none;border-radius:6px;padding:6px 18px;font-size:15px;cursor:pointer;">下载</button>
+                    <button id="make_ppt" style="position:absolute;top:12px;left:80px;background:#34c759;color:#fff;border:none;border-radius:6px;padding:6px 18px;font-size:15px;cursor:pointer;">制作ppt文档</button>
+                    <div id="modal_content"></div>
+                  </div>
+                `;
+                document.body.appendChild(modal);
+            }
+            if (typeof marked !== 'undefined') {
+                document.getElementById('modal_content').innerHTML = marked.parse(markdownContent);
+            } else {
+                document.getElementById('modal_content').innerText = markdownContent;
+            }
+            modal.style.display = 'flex';
+            document.getElementById('modal_close').onclick = function() {
+                modal.style.display = 'none';
+            };
+            document.getElementById('modal_download').onclick = function() {
+                // 删除所有<think>…</think>标签及其内容
+                let rawMarkdown = window.last_full_markdown || '';
+                let cleanedMarkdown = rawMarkdown.replace(/<think>[\s\S]*?<\/think>/g, '');
+                let html = (typeof marked !== 'undefined') ? marked.parse(cleanedMarkdown) : cleanedMarkdown;
+                if (typeof window.htmlDocx !== 'undefined') {
+                    var converted = window.htmlDocx.asBlob('<!DOCTYPE html><html><head><meta charset=\'utf-8\'></head><body>' + html + '</body></html>');
+                    var a = document.createElement('a');
+                    a.href = URL.createObjectURL(converted);
+                    var now = new Date();
+                    var ts = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') + '_' + String(now.getHours()).padStart(2,'0') + String(now.getMinutes()).padStart(2,'0') + String(now.getSeconds()).padStart(2,'0');
+                    a.download = '公文输出_' + ts + '.docx';
+                    document.body.appendChild(a);
+                    a.click();
+                    setTimeout(function(){ document.body.removeChild(a); }, 100);
+                } else {
+                    alert('docx导出库未加载');
+                }
+            };
+            document.getElementById('make_ppt').onclick = function() {
+                createPPTDocument();
+            };
+        }
+
+        async function createPPTDocument() {
+            if (!window.last_full_markdown) {
+                alert('没有可生成PPT的内容');
+                return;
+            }
+
+            const articleContent = window.last_full_markdown;
+            const userId = 'demo_user'; // 沿用现有的user_id
+            const conversationId = '';
+            
+            try {
+                // 显示加载状态
+                const loadingModal = showLoadingModal('正在生成PPT文档...');
+                
+                // 调用Dify API - 使用非流式请求获取完整结果
+                const response = await fetch('/writing/generate_ppt', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        inputs: { article_content: articleContent },
+                        user_id: userId,
+                        sys_query: '制作ppt',
+                        conversation_id: conversationId
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('PPT生成接口调用失败');
+                }
+
+                const result = await response.json();
+                
+                console.log('Dify API响应:', result);
+                console.log('响应中的answer字段:', result.answer);
+                
+                // 提取SVG代码
+                const svgPages = extractSVGFromResponse(result.answer);
+                
+                if (svgPages.length === 0) {
+                    console.log('未找到SVG内容，响应内容:', result.answer);
+                    alert('未找到SVG内容，请检查Dify工作流是否正确生成了SVG格式的PPT');
+                    return;
+                }
+
+                // 保存SVG到本地文件
+                saveSVGPages(svgPages);
+
+                // 显示SVG页面
+                showSVGModal(svgPages);
+                
+            } catch (error) {
+                alert('PPT生成失败: ' + error.message);
+            } finally {
+                closeLoadingModal();
+            }
+        }
+
+        function saveSVGPages(svgPages) {
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            svgPages.forEach((svgContent, index) => {
+                const filename = `svg/page_${timestamp}_${index + 1}.svg`;
+                const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                
+                // 清理
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 100);
+            });
+        }
+        function extractSVGFromResponse(responseText) {
+            console.log('原始响应内容:', responseText);
+            
+            // 支持多种SVG代码块格式
+            const patterns = [
+                /```svg([\s\S]*?)```/g,     // 标准格式 ```svg
+                /'''svg([\s\S]*?)'''/g,     // 三引号格式 '''svg
+                /<svg[\s\S]*?<\/svg>/g      // 直接SVG标签格式
+            ];
+            
+            const matches = [];
+            
+            for (const pattern of patterns) {
+                let match;
+                while ((match = pattern.exec(responseText)) !== null) {
+                    let svgContent = match[1] ? match[1].trim() : match[0].trim();
+                    
+                    // 如果内容不是以<svg开头，可能需要添加SVG标签
+                    if (!svgContent.startsWith('<svg')) {
+                        // 检查是否是纯SVG内容但缺少开头标签
+                        if (svgContent.includes('viewBox') || svgContent.includes('xmlns')) {
+                            svgContent = '<svg ' + svgContent;
+                        }
+                    }
+                    
+                    // 确保SVG内容完整
+                    if (svgContent.includes('<svg') && svgContent.includes('</svg>')) {
+                        matches.push(svgContent);
+                        console.log('提取到SVG内容:', svgContent.substring(0, 200) + '...');
+                    }
+                }
+                // 重置正则表达式的lastIndex
+                pattern.lastIndex = 0;
+            }
+            
+            console.log('总共提取到', matches.length, '个SVG');
+            return matches;
+        }
+
+        function showSVGModal(svgPages) {
+            let svgModal = document.getElementById('svg_modal');
+            if (!svgModal) {
+                svgModal = document.createElement('div');
+                svgModal.id = 'svg_modal';
+                svgModal.style.position = 'fixed';
+                svgModal.style.left = '0';
+                svgModal.style.top = '0';
+                svgModal.style.width = '100vw';
+                svgModal.style.height = '100vh';
+                svgModal.style.background = 'rgba(0,0,0,0.8)';
+                svgModal.style.display = 'flex';
+                svgModal.style.alignItems = 'center';
+                svgModal.style.justifyContent = 'center';
+                svgModal.style.zIndex = '10000';
+                svgModal.innerHTML = `
+                    <div style="background:#fff;max-width:90vw;width:800px;max-height:90vh;overflow:auto;border-radius:14px;box-shadow:0 4px 24px 0 rgba(0,0,0,0.12);padding:32px 28px 24px 28px;position:relative;">
+                        <button id="svg_modal_close" style="position:absolute;top:12px;right:12px;background:none;border:none;font-size:22px;cursor:pointer;">×</button>
+                        <div style="position:absolute;top:12px;left:12px;display:flex;gap:10px;align-items:center;">
+                            <button id="svg_prev_page" style="background:#007aff;color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:13px;cursor:pointer;">上一页</button>
+                            <span id="svg_page_info" style="font-size:13px;color:#666;">第 1 页 / 共 ${svgPages.length} 页</span>
+                            <button id="svg_next_page" style="background:#007aff;color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:13px;cursor:pointer;">下一页</button>
+                        </div>
+                        <div id="svg_container" style="margin-top:50px;display:flex;justify-content:center;align-items:center;min-height:400px;"></div>
+                    </div>
+                `;
+                document.body.appendChild(svgModal);
+            }
+
+            let currentPage = 0;
+            
+            function renderPage(pageIndex) {
+                if (pageIndex < 0 || pageIndex >= svgPages.length) return;
+                
+                currentPage = pageIndex;
+                const container = document.getElementById('svg_container');
+                container.innerHTML = svgPages[pageIndex];
+                
+                // 调整SVG大小以适应容器
+                const svgElement = container.querySelector('svg');
+                if (svgElement) {
+                    svgElement.style.maxWidth = '100%';
+                    svgElement.style.height = 'auto';
+                    svgElement.style.maxHeight = '70vh';
+                }
+                
+                document.getElementById('svg_page_info').textContent = `第 ${pageIndex + 1} 页 / 共 ${svgPages.length} 页`;
+                
+                // 更新按钮状态
+                document.getElementById('svg_prev_page').disabled = pageIndex === 0;
+                document.getElementById('svg_next_page').disabled = pageIndex === svgPages.length - 1;
+            }
+
+            // 绑定事件
+            document.getElementById('svg_prev_page').onclick = () => renderPage(currentPage - 1);
+            document.getElementById('svg_next_page').onclick = () => renderPage(currentPage + 1);
+            document.getElementById('svg_modal_close').onclick = () => {
+                svgModal.style.display = 'none';
+            };
+
+            svgModal.style.display = 'flex';
+            renderPage(0);
+        }
+
+        function showLoadingModal(message) {
+            let loadingModal = document.getElementById('loading_modal');
+            if (!loadingModal) {
+                loadingModal = document.createElement('div');
+                loadingModal.id = 'loading_modal';
+                loadingModal.style.position = 'fixed';
+                loadingModal.style.left = '0';
+                loadingModal.style.top = '0';
+                loadingModal.style.width = '100vw';
+                loadingModal.style.height = '100vh';
+                loadingModal.style.background = 'rgba(0,0,0,0.5)';
+                loadingModal.style.display = 'flex';
+                loadingModal.style.alignItems = 'center';
+                loadingModal.style.justifyContent = 'center';
+                loadingModal.style.zIndex = '10001';
+                loadingModal.innerHTML = `
+                    <div style="background:#fff;padding:24px;border-radius:12px;text-align:center;box-shadow:0 4px 24px 0 rgba(0,0,0,0.12);">
+                        <div style="margin-bottom:12px;font-size:16px;color:#333;">${message}</div>
+                        <div style="color:#666;font-size:14px;">请稍候...</div>
+                    </div>
+                `;
+                document.body.appendChild(loadingModal);
+            } else {
+                loadingModal.querySelector('div div').textContent = message;
+            }
+            loadingModal.style.display = 'flex';
+            return loadingModal;
+        }
+
+        function closeLoadingModal() {
+            const loadingModal = document.getElementById('loading_modal');
+            if (loadingModal) {
+                loadingModal.style.display = 'none';
+            }
+        }
+        
+        // 直接显示文档内容的函数（不生成PPT）
+        async function generatePPTFromDocx() {
+            try {
+                // 清除之前的错误和结果
+                clearError();
+                clearResult();
+                document.getElementById('stream_result').innerText = '正在读取文档...';
+                
+                // 获取表单数据
+                const form = document.getElementById('write_form');
+                const formData = new FormData(form);
+                
+                // 检查是否上传了上级文件
+                const superiorDocsFile = formData.get('Superior_docs');
+                console.log('检查Superior_docs文件:', superiorDocsFile);
+                console.log('文件大小:', superiorDocsFile ? superiorDocsFile.size : 'null');
+                console.log('文件名:', superiorDocsFile ? superiorDocsFile.name : 'null');
+                
+                if (!superiorDocsFile || superiorDocsFile.size === 0) {
+                    console.log('文件检查失败，没有上传Superior_docs文件');
+                    showError('请先上传上级文件文档');
+                    clearResult();
+                    return;
+                }
+                
+                console.log('文件检查通过，开始上传...');
+                
+                // 调用/writing/upload路由读取docx文档
+                console.log('发送fetch请求到 /writing/upload');
+                const response = await fetch('/writing/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                console.log('收到响应:', response);
+                console.log('响应状态:', response.status);
+                console.log('响应OK:', response.ok);
+                
+                if (!response.ok) {
+                    console.log('响应不OK，显示错误');
+                    showError('文档上传失败');
+                    clearResult();
+                    return;
+                }
+                
+                console.log('开始解析JSON响应...');
+                const data = await response.json();
+                console.log('解析到的数据:', data);
+                
+                // 从返回的inputs中提取文档内容
+                if (data.inputs && data.inputs.Superior_docs) {
+                    const docFileInfo = data.inputs.Superior_docs;
+                    console.log('找到Superior_docs信息:', docFileInfo);
+                    
+                    // 检查是否有文档内容
+                    if (data.file_contents && data.file_contents.Superior_docs) {
+                        const documentContent = data.file_contents.Superior_docs;
+                        console.log('获取到的文档内容:', documentContent);
+                        console.log('文档内容长度:', documentContent.length);
+                        
+                        if (!documentContent || documentContent.trim() === '' || documentContent === '无法提取文档内容') {
+                            console.log('文档内容为空或无法提取');
+                            showError('文档内容为空或无法提取，请检查文档格式');
+                            clearResult();
+                            return;
+                        }
+                        
+                        console.log('文档内容提取成功，显示内容');
+                        // 只显示文档内容，不调用PPT生成接口
+                        document.getElementById('stream_result').innerText = documentContent;
+                        
+                        // 保存到全局变量，供模态框中的"制作PPT"按钮使用
+                        window.last_full_markdown = documentContent;
+                        window.last_document_info = {
+                            content: documentContent,
+                            timestamp: new Date().toISOString(),
+                            type: 'document_content'
+                        };
+                        
+                    } else {
+                        showError('未找到文档内容或文档为空');
+                    }
+                    
+                } else {
+                    showError('未能获取文档内容');
+                    clearResult();
+                }
+                
+            } catch (error) {
+                console.error('读取文档时发生错误:', error);
+                console.log('错误详情:', error.stack);
+                console.log('错误类型:', typeof error);
+                console.log('错误消息:', error.message);
+                showError('读取文档失败: ' + (error.message || '未知错误，请检查文档格式是否正确'));
+                clearResult();
+            }
+        }
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            clearError();
+            clearResult();
+            document.getElementById('stream_result').innerText = '生成中……';
+            const form = e.target;
+            const formData = new FormData(form);
+            try {
+                // 1. 先POST /upload，获取inputs和user_id、sys_query
+                const resp = await fetch('/writing/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!resp.ok) {
+                    showError('文件上传失败');
+                    return;
+                }
+                const data = await resp.json();
+                if (!data.inputs || !data.user_id || !data.sys_query) {
+                    showError('参数返回异常');
+                    return;
+                }
+                // 2. POST /stream_chat，流式获取AI输出
+                const streamResp = await fetch('/writing/stream_chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ inputs: data.inputs, user_id: data.user_id, sys_query: data.sys_query })
+                });
+                if (!streamResp.ok) {
+                    showError('AI流式接口调用失败');
+                    return;
+                }
+                const reader = streamResp.body.getReader();
+                const decoder = new TextDecoder('utf-8');
+                let buffer = '';
+                let result = '';
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+                    let lines = buffer.split(/\n\n/);
+                    buffer = lines.pop();
+                    for (let line of lines) {
+                        if (line.startsWith('data:')) {
+                            let content = line.slice(5).trim();
+                            if (content.startsWith('[ERROR]')) {
+                                showError(content);
+                            } else {
+                                try {
+                                    let obj = JSON.parse(content);
+                                    // 兼容 '直接回复8' 和 '直接回复 8'
+                                    if (obj.event === 'node_finished' && obj.data && obj.data.title && (obj.data.title === '直接回复8' || obj.data.title === '直接回复 8')) {
+                                        if (obj.data.outputs && obj.data.outputs.answer) {
+                                            result = obj.data.outputs.answer;
+                                            // 行首空白字符清理，确保markdown标题能被正确识别
+                                            let cleaned = result.split('\n').map(line => line.replace(/^\s+|^[\u3000\u00A0\uFEFF\u200B]+/, '')).join('\n');
+                                            window.last_full_markdown = cleaned;
+                                            if (typeof marked !== 'undefined') {
+                                                document.getElementById('stream_result').innerHTML = marked.parse(cleaned);
+                                            } else {
+                                                document.getElementById('stream_result').innerText = cleaned;
+                                            }
+                                        }
+                                    }
+                                } catch (e) {
+                                    // 忽略解析失败的片段
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (err) {
+                showError('系统异常: ' + err);
+            }
+        }
+    </script>
+</head>
+<body>
+<div class="container">
+    <h2>智能文件撰写系统</h2>
+    <div id="error_box" class="error"></div>
+    <form id="write_form" method="post" action="/writing/upload" enctype="multipart/form-data" onsubmit="handleFormSubmit(event)">
+        <div class="form-flex">
+            <div class="form-section">
+                <div class="form-group">
+                    <label for="sys_query">公文类型（必填）</label>
+                    <select id="sys_query" name="sys_query" required>
+                        <option value="">请选择</option>
+                        <option value="工作报告">工作报告</option>
+                        <option value="领导讲话">领导讲话</option>
+                        <option value="工作要点">工作要点</option>
+                        <option value="处室总结">处室总结</option>
+                        <option value="表态发言">表态发言</option>
+                        <option value="其他">其他</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="query">主题（必填）</label>
+                    <input type="text" id="query" name="query" maxlength="100" required placeholder="请写一篇关于……的文章">
+                </div>
+                <div class="form-group">
+                    <label for="if_rewriter">是否改写（必填）</label>
+                    <select id="if_rewriter" name="if_rewriter" required onchange="updateFormDisplay()">
+                        <option value="">请选择</option>
+                        <option value="是">是</option>
+                        <option value="否">否</option>
+                    </select>
+                </div>
+                <div class="form-group" id="origin_article_group" style="display:none;">
+                    <label for="origin_article">原文（如改写，需上传）</label>
+                    <input type="file" id="origin_article" name="origin_article" accept=".pdf,.doc,.docx,.txt,.md,.markdown,.html,.xls,.xlsx,.ppt,.pptx,.xml,.epub,.csv,.eml,.msg">
+                </div>
+                <div class="form-group">
+                    <label for="if_imitate_writing">是否仿写（必填）</label>
+                    <select id="if_imitate_writing" name="if_imitate_writing" required onchange="updateFormDisplay()">
+                        <option value="">请选择</option>
+                        <option value="是">是</option>
+                        <option value="否">否</option>
+                    </select>
+                </div>
+                <div class="form-group" id="imitate_article_group" style="display:none;">
+                    <label for="imitate_article">仿写的文章（如仿写，需上传）</label>
+                    <input type="file" id="imitate_article" name="imitate_article" accept=".pdf,.doc,.docx,.txt,.md,.markdown,.html,.xls,.xlsx,.ppt,.pptx,.xml,.epub,.csv,.eml,.msg">
+                </div>
+                <div class="form-group">
+                    <label for="Superior_docs">上级文件或ppt原文（可选）</label>
+                    <input type="file" id="Superior_docs" name="Superior_docs" accept=".pdf,.doc,.docx,.txt,.md,.markdown,.html,.xls,.xlsx,.ppt,.pptx,.xml,.epub,.csv,.eml,.msg,.jpg,.jpeg,.png,.gif,.webp,.svg">
+                </div>
+            </div>
+            <div class="form-section">
+                <div class="form-group">
+                    <label for="if_database">是否查数据库（必填）</label>
+                    <select id="if_database" name="if_database" required onchange="updateFormDisplay()">
+                        <option value="">请选择</option>
+                        <option value="是">是</option>
+                        <option value="否">否</option>
+                    </select>
+                </div>
+                <div class="form-group" id="keyword_database_group" style="display:none;">
+                    <label for="keyword_database">查询关键词（如查数据库必填）</label>
+                    <input type="text" id="keyword_database" name="keyword_database" maxlength="48" placeholder="如：年份、政务服务、法治建设等">
+                </div>
+                <div class="form-group">
+                    <label for="if_online_search">是否联网搜索（必填）</label>
+                    <select id="if_online_search" name="if_online_search" required onchange="updateFormDisplay()">
+                        <option value="">请选择</option>
+                        <option value="是">是</option>
+                        <option value="否">否</option>
+                    </select>
+                </div>
+                <div class="form-group" id="online_search_topic_group" style="display:none;">
+                    <label for="online_search_topic">联网搜索的主题（如网搜，需填写）</label>
+                    <input type="text" id="online_search_topic" name="online_search_topic" maxlength="48" placeholder="请输入联网搜索主题">
+                </div>
+            </div>
+        </div>
+        <button type="submit">提交生成</button>
+        <button type="button" class="generate-ppt-btn" onclick="generatePPTFromDocx()">直接上传文档生成PPT</button>
+    </form>
+    <div class="stream-result" id="stream_result"></div>
+</div>
+<script>
+    window.onload = function() {
+        updateFormDisplay();
+        // 绑定点击事件，弹出模态窗口
+        var streamResult = document.getElementById('stream_result');
+        if (streamResult) {
+            streamResult.onclick = function() {
+                if (window.last_full_markdown) showFullContent(window.last_full_markdown);
+            };
+        }
+    };
+</script>
+</body>
+</html>
