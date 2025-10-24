@@ -41,6 +41,15 @@ watchdog==3.0.0
 # 更好的JSON处理
 orjson==3.9.10
 
+# ==================== 音频处理 ====================
+# 会议纪要系统(meeting_minutes)专用
+pydub==0.25.1
+
 # ==================== 说明 ====================
 # QA系统(业务查询系统)使用Node.js + Express，依赖在package.json中管理
 # 需要单独安装: npm install express@^5.1.0
+# 
+# 会议纪要系统音频处理功能需要FFmpeg支持:
+# Windows: 下载FFmpeg并添加到PATH环境变量
+# Linux: sudo apt-get install ffmpeg
+# macOS: brew install ffmpeg

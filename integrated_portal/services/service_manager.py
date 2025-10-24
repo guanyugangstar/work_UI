@@ -73,6 +73,19 @@ class ServiceManager:
                 'last_restart': None,
                 'health_check_failures': 0,
                 'auto_restart_disabled': False
+            },
+            'meeting_minutes': {
+                'name': '会议纪要系统',
+                'port': 9000,
+                'path': '',
+                'script': '',
+                'process': None,
+                'last_health_check': None,
+                'started': False,
+                'restart_count': 0,
+                'last_restart': None,
+                'health_check_failures': 0,
+                'auto_restart_disabled': False
             }
         }
         
@@ -111,6 +124,10 @@ class ServiceManager:
                 # censor系统已整合到门户内，不再单独进程/端口
                 config['command'] = None
                 config['check_url'] = f"http://localhost:{self.services['censor']['port']}/censor/"
+            elif service_name == 'meeting_minutes':
+                # meeting_minutes系统已整合到门户内，不再单独进程/端口
+                config['command'] = None
+                config['check_url'] = f"http://localhost:{self.services['meeting_minutes']['port']}/meeting_minutes/"
             else:
                 # 其他系统使用Python
                 config['command'] = [sys.executable, config['script']]
@@ -186,6 +203,12 @@ class ServiceManager:
                 # 门户内置，无需启动外部进程，标记为已启动
                 logger.info("启动文件审查系统（蓝图激活）")
                 self.services['censor']['started'] = True
+                return True
+
+            if service_name == 'meeting_minutes':
+                # 门户内置，无需启动外部进程，标记为已启动
+                logger.info("启动会议纪要系统（蓝图激活）")
+                self.services['meeting_minutes']['started'] = True
                 return True
 
             if self.is_service_running(service_name):
@@ -276,6 +299,12 @@ class ServiceManager:
             logger.info("已停止文件审查系统（蓝图停用）")
             return True
 
+        # 会议纪要系统：仅标记为未启动，不做进程操作
+        if service_name == 'meeting_minutes':
+            self.services['meeting_minutes']['started'] = False
+            logger.info("已停止会议纪要系统（蓝图停用）")
+            return True
+
         
         if service_name not in self.processes:
             return True
@@ -341,6 +370,15 @@ class ServiceManager:
                 'message': '服务已启动' if started else '服务未运行',
                 'port': self.services['qa_sys']['port'],
                 'name': self.services['qa_sys']['name']
+            }
+
+        if service_name == 'meeting_minutes':
+            started = self.services['meeting_minutes'].get('started', False)
+            return {
+                'status': 'running' if started else 'stopped',
+                'message': '服务已启动' if started else '服务未运行',
+                'port': self.services['meeting_minutes']['port'],
+                'name': self.services['meeting_minutes']['name']
             }
 
         is_running = self.is_service_running(service_name)

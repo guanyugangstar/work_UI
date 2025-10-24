@@ -46,6 +46,14 @@ class Config:
             'url': 'http://localhost:9000/censor',
             'path': '/censor',
             'color': '#9C27B0'
+        },
+        'meeting_minutes': {
+            'name': '会议纪要系统',
+            'description': '音频处理与会议纪要自动生成',
+            'icon': '🎙️',
+            'url': 'http://localhost:9000/meeting_minutes',
+            'path': '/meeting_minutes',
+            'color': '#FF5722'
         }
     }
     

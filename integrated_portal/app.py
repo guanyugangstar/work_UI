@@ -18,6 +18,7 @@ from blueprints.writing import writing_bp
 from blueprints.case2pg import case2pg_bp
 from blueprints.censor import censor_bp
 from blueprints.qa_sys import qa_sys_bp
+from blueprints.meeting_minutes import meeting_minutes_bp
 
 # 设置日志
 logger = setup_logger(__name__)
@@ -46,6 +47,9 @@ def create_app():
     
     # 注册蓝图：业务查询系统在统一门户下以 /qa_sys 前缀提供
     app.register_blueprint(qa_sys_bp, url_prefix='/qa_sys')
+    
+    # 注册蓝图：会议纪要系统在统一门户下以 /meeting_minutes 前缀提供
+    app.register_blueprint(meeting_minutes_bp, url_prefix='/meeting_minutes')
     
     @app.route('/')
     def index():
@@ -395,7 +399,7 @@ if __name__ == '__main__':
     print(f"📍 服务器地址: http://localhost:{Config.PORT}")
     print(f"🌐 网络地址: http://0.0.0.0:{Config.PORT}")
     print(f"🔧 调试模式: {'开启' if Config.DEBUG else '关闭'}")
-    print(f"📊 集成子系统: 文件撰写、业务查询、数据处理、文件审查")
+    print(f"📊 集成子系统: 文件撰写、业务查询、数据处理、文件审查、会议纪要")
     print(f"{'='*60}\n")
     
     app.run(

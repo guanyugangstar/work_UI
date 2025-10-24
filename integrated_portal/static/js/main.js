@@ -122,6 +122,13 @@ window.PortalConfig = {
             color: '#ef4444',
             path: '/censor',
             url: '/censor'
+        },
+        meeting_minutes: {
+            name: '会议纪要系统',
+            icon: '🎙️',
+            color: '#8b5cf6',
+            path: '/meeting_minutes/',
+            url: '/meeting_minutes/'
         }
     },
     

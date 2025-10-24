@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>会议纪要系统 - 统一门户系统</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            padding: 15px;
+            height: calc(100vh - 200px);
+        }
+
+        .card {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            padding: 8px 12px;
+            margin: -12px -12px 10px -12px;
+            border-radius: 6px 6px 0 0;
+            font-weight: bold;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .card-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 音频上传区域 */
+        .upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 6px;
+            padding: 20px;
+            text-align: center;
+            background-color: #fafafa;
+            margin-bottom: 10px;
+            transition: border-color 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: #007bff;
+        }
+
+        .upload-area.dragover {
+            border-color: #007bff;
+            background-color: #f0f8ff;
+        }
+
+        .upload-icon {
+            font-size: 24px;
+            color: #999;
+            margin-bottom: 8px;
+        }
+
+        .upload-text {
+            color: #666;
+            font-size: 11px;
+            margin-bottom: 5px;
+        }
+
+        .file-info {
+            color: #999;
+            font-size: 9px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .success-message {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 8px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-size: 12px;
+            display: none;
+        }
+
+        /* 音频处理区域 */
+        .processing-options {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .option-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .option-group label {
+            font-size: 11px;
+            color: #333;
+            min-width: 60px;
+        }
+
+        .option-group input, .option-group select {
+            flex: 1;
+            padding: 4px 6px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+
+        .audio-player {
+            width: 100%;
+            margin: 10px 0;
+            height: 30px;
+        }
+
+        .progress-container {
+            margin: 10px 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #007bff, #0056b3);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            font-size: 10px;
+            color: #666;
+            margin-top: 4px;
+            text-align: center;
+        }
+
+        /* 会议纪要生成区域 */
+        .minutes-form {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .form-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-row label {
+            font-size: 11px;
+            color: #333;
+            min-width: 60px;
+        }
+
+        .form-row input {
+            flex: 1;
+            padding: 4px 6px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+
+        .result-area {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 8px;
+            min-height: 80px;
+            max-height: 150px;
+            overflow-y: auto;
+            font-size: 10px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            flex: 1;
+        }
+
+        /* 按钮样式 */
+        .btn {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.3s ease;
+            margin: 2px;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,123,255,0.3);
+        }
+
+        .btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745, #20c997);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ffc107, #fd7e14);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        /* 状态指示器 */
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+
+        .status-ready { background-color: #28a745; }
+        .status-processing { background-color: #ffc107; }
+        .status-error { background-color: #dc3545; }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+            
+            .container {
+                margin: 5px;
+            }
+        }
+
+        /* 隐藏元素 */
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎤 会议纪要系统</h1>
+            <p>上传音频文件，自动生成会议纪要。支持音频裁剪、压缩等预处理功能。</p>
+        </div>
+
+        <div class="main-content">
+            <!-- 音频上传卡片 -->
+            <div class="card">
+                <div class="card-header">
+                    📁 音频文件上传
+                </div>
+                <div class="card-content">
+                    <div class="upload-area" id="uploadArea" onclick="document.getElementById('audioFile').click()">
+                        <div class="upload-icon">☁️</div>
+                        <div class="upload-text">点击选择音频文件或拖拽文件到此处</div>
+                        <div class="file-info">
+                            支持格式: .mp3, .wav, .m4a, .aac, .ogg, .flac, .wma<br>
+                            最大文件大小: 100MB
+                        </div>
+                    </div>
+                    <input type="file" id="audioFile" class="file-input" accept=".mp3,.wav,.m4a,.aac,.ogg,.flac,.wma">
+                    <div id="uploadSuccess" class="success-message">
+                        ✅ 文件上传成功！
+                    </div>
+                    <div class="button-group">
+                        <button class="btn" onclick="document.getElementById('audioFile').click()">选择文件</button>
+                        <button class="btn btn-success" onclick="processUploadedFile()" id="processUploadBtn" disabled>处理文件</button>
+                        <button class="btn btn-warning" onclick="clearFile()">清除文件</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 音频处理卡片 -->
+            <div class="card">
+                <div class="card-header">
+                    🎵 音频处理
+                </div>
+                <div class="card-content">
+                    <div class="processing-options">
+                        <div class="option-group">
+                            <label>开始时间:</label>
+                            <input type="number" id="startTime" placeholder="秒" min="0" step="1">
+                        </div>
+                        <div class="option-group">
+                            <label>结束时间:</label>
+                            <input type="number" id="endTime" placeholder="秒" min="0" step="1">
+                        </div>
+                        <div class="option-group">
+                            <label>压缩质量:</label>
+                            <select id="quality">
+                                <option value="high">高质量</option>
+                                <option value="medium" selected>中等质量</option>
+                                <option value="low">低质量</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <audio id="audioPlayer" class="audio-player" controls style="display: none;">
+                        您的浏览器不支持音频播放。
+                    </audio>
+
+                    <div class="progress-container" id="processProgress" style="display: none;">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <div class="progress-text" id="progressText">处理中...</div>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-success" onclick="processAudio()" id="processBtn" disabled>
+                            <span class="status-indicator status-ready"></span>处理音频
+                        </button>
+                        <button class="btn" onclick="previewAudio()" id="previewBtn" disabled>预览</button>
+                        <button class="btn btn-danger" onclick="stopProcessing()" id="stopBtn" disabled>停止</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 会议纪要生成卡片 -->
+            <div class="card">
+                <div class="card-header">
+                    📝 会议纪要生成
+                </div>
+                <div class="card-content">
+                    <div class="minutes-form">
+                        <div class="form-row">
+                            <label>参与人数:</label>
+                            <input type="number" id="participantCount" placeholder="人数" min="1" max="50" value="5">
+                        </div>
+                        <div class="form-row">
+                            <label>会议主题:</label>
+                            <input type="text" id="meetingTopic" placeholder="请输入会议主题">
+                        </div>
+                    </div>
+
+                    <div class="result-area" id="minutesResult">
+                        文件上传后即可生成会议纪要，无需等待音频处理完成...
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-success" onclick="generateMinutes()" id="generateBtn" disabled>
+                            <span class="status-indicator status-ready"></span>生成会议纪要
+                        </button>
+                        <button class="btn" onclick="downloadMinutes()" id="downloadBtn" disabled>下载纪要</button>
+                        <button class="btn btn-warning" onclick="clearMinutes()">清空结果</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let uploadedFile = null;
+        let processedAudioUrl = null;
+        let isProcessing = false;
+
+        // 等待DOM加载完成后再绑定事件
+        document.addEventListener('DOMContentLoaded', function() {
+            // 文件选择事件
+            document.getElementById('audioFile').addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    uploadFile(e.target.files[0]);
+                }
+            });
+
+            // 拖拽上传功能
+            const uploadArea = document.getElementById('uploadArea');
+            
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+
+            uploadArea.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+            });
+
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    uploadFile(files[0]);
+                }
+            });
+
+            console.log('会议纪要系统初始化完成');
+        });
+
+        function uploadFile(file) {
+            console.log('uploadFile 函数被调用，文件:', file);
+            
+            if (!file) {
+                alert('请先选择音频文件！');
+                return;
+            }
+
+            // 验证文件类型
+            const allowedTypes = ['audio/mpeg', 'audio/wav', 'audio/mp4', 'audio/aac', 'audio/ogg', 'audio/flac', 'audio/x-ms-wma'];
+            if (!allowedTypes.includes(file.type)) {
+                alert('不支持的文件格式！请选择音频文件。');
+                return;
+            }
+
+            // 验证文件大小 (100MB)
+            const maxSize = 100 * 1024 * 1024;
+            if (file.size > maxSize) {
+                alert('文件大小超过100MB限制！');
+                return;
+            }
+
+            // 存储文件
+            uploadedFile = file;
+            processedAudioUrl = URL.createObjectURL(file);
+
+            // 更新UI显示
+            const uploadArea = document.getElementById('uploadArea');
+            const uploadSuccess = document.getElementById('uploadSuccess');
+            
+            // 显示文件信息
+            uploadArea.innerHTML = `
+                <div class="upload-icon">✅</div>
+                <div class="upload-text">文件已选择</div>
+                <div class="file-info">
+                    <strong>文件名:</strong> ${file.name}<br>
+                    <strong>大小:</strong> ${(file.size / 1024 / 1024).toFixed(2)} MB<br>
+                    <strong>类型:</strong> ${file.type}
+                </div>
+            `;
+            
+            // 显示成功消息
+            uploadSuccess.style.display = 'block';
+            
+            // 启用按钮
+            document.getElementById('processUploadBtn').disabled = false;
+            document.getElementById('generateBtn').disabled = false;
+            
+            // 显示音频播放器
+            const audioPlayer = document.getElementById('audioPlayer');
+            if (audioPlayer) {
+                audioPlayer.src = processedAudioUrl;
+                audioPlayer.style.display = 'block';
+            }
+
+            console.log('文件选择成功:', file.name, '大小:', file.size, '类型:', file.type);
+        }
+
+        // 处理上传的文件（实际上传到服务器）
+        async function processUploadedFile() {
+            if (!uploadedFile) {
+                alert('请先选择音频文件！');
+                return;
+            }
+
+            document.getElementById('processUploadBtn').disabled = true;
+            const resultArea = document.getElementById('minutesResult');
+            const originalText = resultArea.textContent;
+            resultArea.textContent = '正在上传文件到服务器...';
+
+            try {
+                const formData = new FormData();
+                formData.append('audio_file', uploadedFile);
+                
+                const response = await fetch('/meeting_minutes/upload_audio', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('文件上传失败');
+                }
+
+                const data = await response.json();
+                if (!data.success) {
+                    throw new Error(data.error || '文件上传失败');
+                }
+
+                resultArea.textContent = '文件上传成功！可以开始生成会议纪要或处理音频。';
+                document.getElementById('processBtn').disabled = false; // 启用音频处理按钮
+                
+                // 存储服务器返回的文件ID，供后续使用
+                uploadedFile.dify_file_id = data.dify_file_id;
+                uploadedFile.original_file_id = data.dify_file_id.replace('dify_', ''); // 提取原始文件ID用于音频处理
+                
+                console.log('文件上传成功，文件ID:', data.dify_file_id);
+                
+            } catch (error) {
+                console.error('文件上传失败:', error);
+                resultArea.textContent = '文件上传失败: ' + error.message;
+                document.getElementById('processUploadBtn').disabled = false;
+            }
+        }
+
+        function clearFile() {
+            uploadedFile = null;
+            document.getElementById('audioFile').value = '';
+            document.getElementById('uploadSuccess').style.display = 'none';
+            document.getElementById('audioPlayer').style.display = 'none';
+            document.getElementById('processUploadBtn').disabled = true;
+            document.getElementById('processBtn').disabled = true;
+            document.getElementById('previewBtn').disabled = true;
+            document.getElementById('generateBtn').disabled = true;
+            document.getElementById('minutesResult').textContent = '文件上传后即可生成会议纪要，无需等待音频处理完成...';
+        }
+
+        // 音频处理相关
+        async function processAudio() {
+            if (!uploadedFile) {
+                alert('请先上传音频文件！');
+                return;
+            }
+
+            // 检查文件是否已上传到服务器
+            if (!uploadedFile.dify_file_id) {
+                alert('请先点击"处理文件"上传音频文件到服务器！');
+                return;
+            }
+
+            isProcessing = true;
+            document.getElementById('processBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+            document.getElementById('processProgress').style.display = 'block';
+            document.getElementById('progressText').textContent = '正在处理音频...';
+
+            try {
+                // 获取处理参数
+                const startTime = parseFloat(document.getElementById('startTime').value) || 0;
+                const endTime = parseFloat(document.getElementById('endTime').value) || null;
+                const quality = document.getElementById('quality').value;
+                const compress = quality !== 'high'; // 高质量不压缩，中等和低质量压缩
+
+                // 调用后端音频处理API
+                const response = await fetch('/meeting_minutes/process_audio', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        file_id: uploadedFile.original_file_id || uploadedFile.name.split('.')[0],
+                        start_time: startTime,
+                        end_time: endTime,
+                        compress: compress
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('音频处理失败');
+                }
+
+                const result = await response.json();
+                if (!result.success) {
+                    throw new Error(result.error || '音频处理失败');
+                }
+
+                // 处理成功，上传处理后的文件到Dify
+                document.getElementById('progressText').textContent = '正在上传处理后的音频...';
+                
+                const uploadResponse = await fetch('/meeting_minutes/upload_processed_audio', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        processed_file_id: result.processed_file_id
+                    })
+                });
+
+                if (!uploadResponse.ok) {
+                    throw new Error('处理后音频上传失败');
+                }
+
+                const uploadResult = await uploadResponse.json();
+                if (!uploadResult.success) {
+                    throw new Error(uploadResult.error || '处理后音频上传失败');
+                }
+
+                // 保存处理后的文件信息
+                uploadedFile.processed_file_id = uploadResult.dify_file_id;
+                uploadedFile.processed_filename = uploadResult.filename;
+                
+                finishProcessing();
+                
+            } catch (error) {
+                console.error('音频处理失败:', error);
+                document.getElementById('progressText').textContent = '处理失败: ' + error.message;
+                stopProcessing();
+                alert('音频处理失败: ' + error.message);
+            }
+        }
+
+        function finishProcessing() {
+            isProcessing = false;
+            document.getElementById('processBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            document.getElementById('previewBtn').disabled = false;
+            document.getElementById('generateBtn').disabled = false;
+            document.getElementById('progressText').textContent = '处理完成！';
+            
+            setTimeout(() => {
+                document.getElementById('processProgress').style.display = 'none';
+            }, 2000);
+            
+            processedAudioUrl = document.getElementById('audioPlayer').src;
+            console.log('音频处理完成');
+        }
+
+        function previewAudio() {
+            if (processedAudioUrl) {
+                const audioPlayer = document.getElementById('audioPlayer');
+                audioPlayer.currentTime = document.getElementById('startTime').value || 0;
+                audioPlayer.play();
+            }
+        }
+
+        function stopProcessing() {
+            isProcessing = false;
+            document.getElementById('processBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            document.getElementById('processProgress').style.display = 'none';
+        }
+
+        // 会议纪要生成相关
+        async function generateMinutes() {
+            if (!uploadedFile) {
+                alert('请先选择音频文件！');
+                return;
+            }
+
+            const participantCount = document.getElementById('participantCount').value;
+            const meetingTopic = document.getElementById('meetingTopic').value;
+            
+            if (!participantCount) {
+                alert('请输入参与人数！');
+                return;
+            }
+
+            document.getElementById('generateBtn').disabled = true;
+            const resultArea = document.getElementById('minutesResult');
+
+            try {
+                let fileId;
+                
+                // 优先使用处理后的文件ID，如果没有则使用原始文件ID
+                if (uploadedFile.processed_file_id) {
+                    fileId = uploadedFile.processed_file_id;
+                    resultArea.textContent = '使用处理后的音频文件生成会议纪要...';
+                    console.log('使用处理后的文件ID:', fileId);
+                } else if (uploadedFile.dify_file_id) {
+                    fileId = uploadedFile.dify_file_id;
+                    resultArea.textContent = '使用原始音频文件生成会议纪要...';
+                    console.log('使用原始文件ID:', fileId);
+                } else {
+                    // 如果文件还没上传，先上传文件
+                    resultArea.textContent = '正在上传音频文件...';
+                    
+                    const formData = new FormData();
+                    formData.append('audio_file', uploadedFile);
+                    
+                    const uploadResp = await fetch('/meeting_minutes/upload_audio', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!uploadResp.ok) {
+                        throw new Error('音频文件上传失败');
+                    }
+
+                    const uploadData = await uploadResp.json();
+                    if (!uploadData.success || !uploadData.dify_file_id) {
+                        throw new Error('音频文件上传失败: ' + (uploadData.error || '未知错误'));
+                    }
+                    
+                    fileId = uploadData.dify_file_id;
+                    uploadedFile.dify_file_id = fileId; // 保存文件ID供下次使用
+                    resultArea.textContent = '音频文件上传成功，正在生成会议纪要...';
+                }
+
+                // 2. 调用生成会议纪要的API
+                const generateResp = await fetch('/meeting_minutes/generate_minutes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        file_id: fileId,
+                        participants_count: parseInt(participantCount),
+                        additional_info: meetingTopic || ''
+                    })
+                });
+
+                if (!generateResp.ok) {
+                    throw new Error('会议纪要生成接口调用失败');
+                }
+
+                // 3. 处理流式响应
+                const reader = generateResp.body.getReader();
+                const decoder = new TextDecoder('utf-8');
+                let buffer = '';
+                let result = '';
+
+                resultArea.textContent = '正在生成会议纪要，请稍候...';
+
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    let lines = buffer.split(/\n\n/);
+                    buffer = lines.pop();
+
+                    for (let line of lines) {
+                        if (line.startsWith('data:')) {
+                            let content = line.slice(5).trim();
+                            if (content.startsWith('[ERROR]')) {
+                                throw new Error(content);
+                            } else {
+                                try {
+                                    let obj = JSON.parse(content);
+                                    
+                                    // 处理Dify工作流的响应
+                                    if (obj.event === 'message' && obj.answer) {
+                                        result += obj.answer;
+                                        resultArea.textContent = result;
+                                    } else if (obj.event === 'message_end') {
+                                        // 生成完成
+                                        document.getElementById('downloadBtn').disabled = false;
+                                        console.log('会议纪要生成完成');
+                                        break;
+                                    } else if (obj.event === 'error') {
+                                        throw new Error(obj.message || '生成过程中发生错误');
+                                    }
+                                } catch (e) {
+                                    // 忽略解析失败的片段，可能是不完整的JSON
+                                    console.warn('JSON解析失败:', content);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 如果没有获得结果，显示默认消息
+                if (!result.trim()) {
+                    resultArea.textContent = '会议纪要生成完成，但未获得有效内容。请检查音频文件质量或重试。';
+                }
+
+            } catch (error) {
+                console.error('生成会议纪要失败:', error);
+                resultArea.textContent = '生成会议纪要失败: ' + error.message;
+            } finally {
+                document.getElementById('generateBtn').disabled = false;
+            }
+        }
+
+        function downloadMinutes() {
+            const content = document.getElementById('minutesResult').textContent;
+            if (!content || content.includes('等待音频处理')) {
+                alert('没有可下载的会议纪要！');
+                return;
+            }
+
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `会议纪要_${new Date().toISOString().slice(0, 10)}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function clearMinutes() {
+            document.getElementById('minutesResult').textContent = '文件上传后即可生成会议纪要，无需等待音频处理完成...';
+            document.getElementById('downloadBtn').disabled = true;
+        }
+
+        function clearFile() {
+            // 重置文件相关变量
+            uploadedFile = null;
+            processedAudioUrl = null;
+            
+            // 重置上传区域显示
+            const uploadArea = document.getElementById('uploadArea');
+            uploadArea.innerHTML = `
+                <div class="upload-icon">☁️</div>
+                <div class="upload-text">点击选择音频文件或拖拽文件到此处</div>
+                <div class="file-info">
+                    支持格式: .mp3, .wav, .m4a, .aac, .ogg, .flac, .wma<br>
+                    最大文件大小: 100MB
+                </div>
+            `;
+            
+            // 重置文件输入
+            document.getElementById('audioFile').value = '';
+            
+            // 隐藏成功消息
+            document.getElementById('uploadSuccess').style.display = 'none';
+            
+            // 禁用相关按钮
+            document.getElementById('processUploadBtn').disabled = true;
+            document.getElementById('processBtn').disabled = true;
+            document.getElementById('previewBtn').disabled = true;
+            document.getElementById('generateBtn').disabled = true;
+            
+            // 隐藏音频播放器
+            const audioPlayer = document.getElementById('audioPlayer');
+            audioPlayer.style.display = 'none';
+            audioPlayer.src = '';
+            
+            // 重置会议纪要结果
+            document.getElementById('minutesResult').textContent = '文件上传后即可生成会议纪要，无需等待音频处理完成...';
+            document.getElementById('downloadBtn').disabled = true;
+            
+            console.log('文件已清除');
+        }
+    </script>
+</body>
+</html>

@@ -5,7 +5,7 @@
 
 class ServiceManager {
     constructor() {
-        this.services = ['writing', 'case2pg', 'censor'];
+        this.services = ['writing', 'case2pg', 'censor', 'meeting_minutes'];
         this.statusCheckInterval = null;
         this.statusCheckIntervalTime = 30000; // 30秒检查一次，减少频繁检查
         this.init();

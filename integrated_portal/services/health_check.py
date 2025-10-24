@@ -56,6 +56,8 @@ class HealthCheckService:
                 check_url = 'http://localhost:9000/case2pg/'
             elif system_name == 'censor':
                 check_url = 'http://localhost:9000/censor/'
+            elif system_name == 'meeting_minutes':
+                check_url = 'http://localhost:9000/meeting_minutes/'
 
             response = requests.get(
                 check_url,

@@ -70,7 +70,7 @@ def file_to_dify_input(file, file_id):
 
 def extract_docx_text(file_path):
     """
-    提取docx文档的文本内容，并转换为规范的markdown格式
+    提取docx文档的文本内容
     """
     try:
         with zipfile.ZipFile(file_path, 'r') as docx:
@@ -83,120 +83,18 @@ def extract_docx_text(file_path):
                 'w': 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
             }
             
-            # 提取段落和样式信息
-            paragraphs = root.findall('.//w:p', namespaces)
+            # 提取所有文本
+            text_elements = root.findall('.//w:t', namespaces)
             text_content = []
             
-            for para in paragraphs:
-                # 检查段落样式
-                pPr = para.find('.//w:pPr', namespaces)
-                is_heading = False
-                heading_level = 1
-                
-                if pPr is not None:
-                    # 检查是否为标题样式
-                    pStyle = pPr.find('.//w:pStyle', namespaces)
-                    if pStyle is not None:
-                        style_val = pStyle.get('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}val', '')
-                        if 'heading' in style_val.lower() or 'title' in style_val.lower():
-                            is_heading = True
-                            # 尝试从样式名中提取级别
-                            if 'heading1' in style_val.lower() or 'title1' in style_val.lower():
-                                heading_level = 1
-                            elif 'heading2' in style_val.lower() or 'title2' in style_val.lower():
-                                heading_level = 2
-                            elif 'heading3' in style_val.lower() or 'title3' in style_val.lower():
-                                heading_level = 3
-                            else:
-                                heading_level = 2  # 默认二级标题
-                
-                # 提取段落文本，保持文本的连续性
-                text_elements = para.findall('.//w:t', namespaces)
-                para_text = ''.join([elem.text for elem in text_elements if elem.text])
-                
-                if para_text.strip():
-                    # 根据内容特征判断是否为标题
-                    if not is_heading:
-                        # 改进的标题识别规则
-                        stripped_text = para_text.strip()
-                        
-                        # 检查是否为标题格式
-                        title_patterns = [
-                            r'^[一二三四五六七八九十]+、',  # 一、二、三、
-                            r'^（[一二三四五六七八九十]+）',  # （一）（二）
-                            r'^\d+\.',  # 1. 2. 3.
-                            r'^##?\d+',  # #1 ##2
-                        ]
-                        
-                        # 检查是否以冒号结尾且长度较短
-                        is_title_like = (
-                            len(stripped_text) < 80 and 
-                            (stripped_text.endswith('：') or stripped_text.endswith(':'))
-                        )
-                        
-                        # 检查是否匹配标题模式
-                        import re
-                        matches_pattern = any(re.match(pattern, stripped_text) for pattern in title_patterns)
-                        
-                        if is_title_like or matches_pattern:
-                            is_heading = True
-                            # 根据内容确定标题级别
-                            if any(keyword in stripped_text for keyword in ['一、', '二、', '三、', '四、', '五、']):
-                                heading_level = 2
-                            elif any(keyword in stripped_text for keyword in ['（一）', '（二）', '（三）', '（四）', '（五）']):
-                                heading_level = 3
-                            elif re.match(r'^\d+\.', stripped_text):
-                                heading_level = 3
-                            else:
-                                heading_level = 2
-                    
-                    # 格式化输出
-                    if is_heading:
-                        # 清理标题中的特殊字符，确保格式规范
-                        clean_title = para_text.strip().rstrip('：:')
-                        # 确保标题符号后有空格
-                        markdown_title = '#' * heading_level + ' ' + clean_title
-                        text_content.append(markdown_title)
-                    else:
-                        # 普通段落，清理多余的空白字符
-                        clean_para = ' '.join(para_text.split())
-                        if clean_para:
-                            text_content.append(clean_para)
+            for element in text_elements:
+                if element.text:
+                    text_content.append(element.text)
             
-            # 后处理：规范化markdown格式
-            result = []
-            for i, line in enumerate(text_content):
-                if line.startswith('#'):
-                    # 标题前后加空行，但避免重复空行
-                    if i > 0 and result and result[-1] != '':
-                        result.append('')
-                    result.append(line)
-                    # 标题后加空行
-                    if i < len(text_content) - 1:
-                        result.append('')
-                else:
-                    # 普通段落
-                    result.append(line)
-                    # 段落后加空行
-                    if i < len(text_content) - 1 and not text_content[i + 1].startswith('#'):
-                        result.append('')
-            
-            # 最终清理：移除多余的连续空行
-            final_lines = []
-            prev_empty = False
-            for line in result:
-                if line == '':
-                    if not prev_empty:
-                        final_lines.append(line)
-                    prev_empty = True
-                else:
-                    final_lines.append(line)
-                    prev_empty = False
-            
-            final_result = '\n'.join(final_lines).strip()
-            print(f"提取的文档内容长度: {len(final_result)}")
-            print(f"提取的文档内容前200字符: {final_result[:200]}")
-            return final_result if final_result else None
+            result = '\n'.join(text_content).strip()
+            print(f"提取的文档内容长度: {len(result)}")
+            print(f"提取的文档内容前100字符: {result[:100]}")
+            return result if result else None
     except Exception as e:
         print(f"提取docx文本时出错: {e}")
         return None

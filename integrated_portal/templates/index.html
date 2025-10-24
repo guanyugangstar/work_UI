@@ -52,7 +52,7 @@
                          aria-label="系统列表"
                          aria-describedby="system-grid-desc">
                     <div id="system-grid-desc" class="sr-only">
-                        四个可用的子系统，使用方向键导航，回车键打开
+                        五个可用的子系统，使用方向键导航，回车键打开
                     </div>
                     
                     <article class="system-card" 
@@ -192,6 +192,42 @@
                                     data-system="censor" 
                                     title="停止服务"
                                     aria-label="停止文件审查系统"
+                                    style="display: none;">
+                                <i class="fas fa-stop"></i>
+                                <span>停止</span>
+                            </button>
+                        </div>
+                    </article>
+                    
+                    <article class="system-card" 
+                             data-system="meeting_minutes" 
+                             role="gridcell" 
+                             tabindex="0"
+                             aria-labelledby="meeting_minutes-title"
+                             aria-describedby="meeting_minutes-desc meeting_minutes-status">
+                        <div class="card-icon" aria-hidden="true">🎙️</div>
+                        <h3 id="meeting_minutes-title">会议纪要系统</h3>
+                        <p id="meeting_minutes-desc">音频转文字与智能会议纪要生成</p>
+                        <div class="card-status" 
+                             data-status="unknown" 
+                             id="meeting_minutes-status"
+                             role="status" 
+                             aria-live="polite">
+                            <i class="fas fa-circle" aria-hidden="true"></i>
+                            <span>检查中...</span>
+                        </div>
+                        <div class="card-actions">
+                            <button class="btn btn-start btn-sm" 
+                                    data-system="meeting_minutes" 
+                                    title="启动服务"
+                                    aria-label="启动会议纪要系统">
+                                <i class="fas fa-play"></i>
+                                <span>启动</span>
+                            </button>
+                            <button class="btn btn-stop btn-sm" 
+                                    data-system="meeting_minutes" 
+                                    title="停止服务"
+                                    aria-label="停止会议纪要系统"
                                     style="display: none;">
                                 <i class="fas fa-stop"></i>
                                 <span>停止</span>
