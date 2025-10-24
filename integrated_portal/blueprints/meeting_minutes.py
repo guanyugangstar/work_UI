@@ -195,7 +195,8 @@ def process_audio():
             'processed_file_id': f"{file_id}_processed",
             'processed_filename': processed_filename,
             'processed_size': processed_size,
-            'duration': len(audio) / 1000
+            'duration': len(audio) / 1000,
+            'processed_file_url': f"/meeting_minutes/static/temp/{processed_filename}"
         })
         
     except Exception as e:
@@ -348,6 +349,90 @@ def cleanup_temp():
     except Exception as e:
         logging.error(f"Cleanup error: {e}")
         return jsonify({'error': f'清理失败: {str(e)}'}), 500
+
+@meeting_minutes_bp.route('/splice_audio', methods=['POST'])
+def splice_audio():
+    """拼接多个音频文件"""
+    if not AUDIO_PROCESSING_AVAILABLE:
+        return jsonify({'error': '音频处理功能不可用，请安装pydub'}), 400
+    
+    try:
+        data = request.get_json()
+        segments = data.get('segments', [])
+        
+        if not segments or len(segments) < 1:
+            return jsonify({'error': '至少需要一个音频片段'}), 400
+        
+        # 创建一个空的音频段用于拼接
+        combined_audio = None
+        
+        for i, segment in enumerate(segments):
+            file_id = segment.get('file_id')
+            filename = segment.get('filename')
+            
+            if not file_id:
+                return jsonify({'error': f'第{i+1}个片段缺少文件ID'}), 400
+            
+            # 查找音频文件
+            segment_files = []
+            for f in os.listdir(TEMP_DIR):
+                if file_id in f and f.endswith(('.mp3', '.wav', '.m4a', '.aac', '.ogg', '.flac')):
+                    segment_files.append(f)
+            
+            if not segment_files:
+                return jsonify({'error': f'找不到音频片段文件: {file_id}'}), 404
+            
+            # 使用第一个匹配的文件
+            segment_path = os.path.join(TEMP_DIR, segment_files[0])
+            
+            try:
+                # 加载音频片段
+                audio_segment = AudioSegment.from_file(segment_path)
+                
+                # 拼接音频
+                if combined_audio is None:
+                    combined_audio = audio_segment
+                else:
+                    combined_audio += audio_segment
+                    
+                logging.info(f"Added segment {i+1}: {segment_files[0]}, duration: {len(audio_segment)/1000}s")
+                
+            except Exception as e:
+                logging.error(f"Failed to load audio segment {segment_files[0]}: {e}")
+                return jsonify({'error': f'加载音频片段失败: {segment_files[0]}'}), 500
+        
+        if combined_audio is None:
+            return jsonify({'error': '没有成功加载任何音频片段'}), 500
+        
+        # 生成拼接后的文件名
+        spliced_filename = f"spliced_audio_{uuid.uuid4().hex[:8]}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.mp3"
+        spliced_path = os.path.join(TEMP_DIR, spliced_filename)
+        
+        # 导出拼接后的音频
+        combined_audio.export(spliced_path, format="mp3", bitrate="128k")
+        
+        # 获取拼接后的文件信息
+        spliced_size = os.path.getsize(spliced_path)
+        total_duration = len(combined_audio) / 1000  # 转换为秒
+        
+        logging.info(f"Audio splicing completed: {spliced_filename}, "
+                    f"segments: {len(segments)}, "
+                    f"total_duration: {total_duration}s, "
+                    f"file_size: {spliced_size} bytes")
+        
+        return jsonify({
+            'success': True,
+            'spliced_filename': spliced_filename,
+            'spliced_file_url': f"/meeting_minutes/static/temp/{spliced_filename}",
+            'total_duration': total_duration,
+            'file_size': spliced_size,
+            'segments_count': len(segments),
+            'message': f'成功拼接{len(segments)}个音频片段'
+        })
+        
+    except Exception as e:
+        logging.error(f"Audio splicing error: {e}")
+        return jsonify({'error': f'音频拼接失败: {str(e)}'}), 500
 
 @meeting_minutes_bp.route('/health')
 def health_check():

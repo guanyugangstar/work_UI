@@ -191,6 +191,128 @@
             text-align: center;
         }
 
+        /* 音频拼接区域 */
+        .splice-info {
+            background-color: #f8f9fa;
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-size: 11px;
+            color: #666;
+        }
+
+        .splice-files-container {
+            margin-bottom: 15px;
+        }
+
+        .splice-files-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .splice-files-header h4 {
+            margin: 0;
+            font-size: 12px;
+            color: #333;
+        }
+
+        .btn-small {
+            padding: 4px 8px;
+            font-size: 10px;
+            border-radius: 3px;
+        }
+
+        .splice-files-list {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            min-height: 100px;
+            padding: 8px;
+            background-color: #fafafa;
+        }
+
+        .empty-message {
+            text-align: center;
+            color: #999;
+            font-size: 11px;
+            padding: 20px;
+        }
+
+        .splice-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 8px;
+            margin-bottom: 4px;
+            background-color: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+
+        .splice-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .splice-item-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .splice-item-name {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .splice-item-duration {
+            color: #666;
+            font-size: 10px;
+        }
+
+        .splice-item-controls {
+            display: flex;
+            gap: 4px;
+        }
+
+        .splice-item-controls button {
+            padding: 2px 6px;
+            font-size: 9px;
+            border: none;
+            border-radius: 2px;
+            cursor: pointer;
+        }
+
+        .move-up {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .move-down {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .remove-item {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .splice-preview {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        .splice-preview h4 {
+            margin: 0 0 8px 0;
+            font-size: 12px;
+            color: #333;
+        }
+
         /* 会议纪要生成区域 */
         .minutes-form {
             display: flex;
@@ -382,6 +504,51 @@
                         </button>
                         <button class="btn" onclick="previewAudio()" id="previewBtn" disabled>预览</button>
                         <button class="btn btn-danger" onclick="stopProcessing()" id="stopBtn" disabled>停止</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 音频拼接卡片 -->
+            <div class="card">
+                <div class="card-header">
+                    🎬 音频拼接
+                </div>
+                <div class="card-content">
+                    <div class="splice-info">
+                        <p>选择多个已处理的音频片段，按顺序拼接成完整音频文件</p>
+                    </div>
+                    
+                    <div class="splice-files-container">
+                        <div class="splice-files-header">
+                            <h4>音频片段列表</h4>
+                            <button class="btn btn-small" onclick="addAudioSegment()">添加片段</button>
+                        </div>
+                        <div class="splice-files-list" id="spliceFilesList">
+                            <div class="empty-message">暂无音频片段，请先处理音频文件或添加片段</div>
+                        </div>
+                    </div>
+
+                    <div class="splice-preview" id="splicePreview" style="display: none;">
+                        <h4>拼接预览</h4>
+                        <audio id="spliceAudioPlayer" class="audio-player" controls>
+                            您的浏览器不支持音频播放。
+                        </audio>
+                    </div>
+
+                    <div class="progress-container" id="spliceProgress" style="display: none;">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="spliceProgressFill"></div>
+                        </div>
+                        <div class="progress-text" id="spliceProgressText">拼接中...</div>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-success" onclick="spliceAudio()" id="spliceBtn" disabled>
+                            <span class="status-indicator status-ready"></span>开始拼接
+                        </button>
+                        <button class="btn" onclick="previewSplice()" id="previewSpliceBtn" disabled>预览拼接</button>
+                        <button class="btn btn-primary" onclick="downloadSplicedAudio()" id="downloadSpliceBtn" disabled>下载拼接音频</button>
+                        <button class="btn btn-warning" onclick="clearSpliceList()">清空列表</button>
                     </div>
                 </div>
             </div>
@@ -643,8 +810,11 @@
                 }
 
                 // 保存处理后的文件信息
-                uploadedFile.processed_file_id = uploadResult.dify_file_id;
-                uploadedFile.processed_filename = uploadResult.filename;
+                uploadedFile.processed_file_id = result.processed_file_id; // 使用本地处理结果的ID
+                uploadedFile.processed_filename = result.processed_filename;
+                uploadedFile.processed_file_url = result.processed_file_url; // 保存处理后音频文件的URL
+                uploadedFile.duration = result.duration; // 保存音频时长
+                uploadedFile.dify_processed_file_id = uploadResult.dify_file_id; // 保存Dify上传后的ID
                 
                 finishProcessing();
                 
@@ -668,7 +838,16 @@
                 document.getElementById('processProgress').style.display = 'none';
             }, 2000);
             
-            processedAudioUrl = document.getElementById('audioPlayer').src;
+            // 如果有处理后的音频文件URL，更新音频播放器的src
+            if (uploadedFile && uploadedFile.processed_file_url) {
+                const audioPlayer = document.getElementById('audioPlayer');
+                audioPlayer.src = uploadedFile.processed_file_url;
+                processedAudioUrl = uploadedFile.processed_file_url;
+                console.log('音频播放器已更新为处理后的音频文件:', uploadedFile.processed_file_url);
+            } else {
+                processedAudioUrl = document.getElementById('audioPlayer').src;
+            }
+            
             console.log('音频处理完成');
         }
 
@@ -878,6 +1057,267 @@
             document.getElementById('downloadBtn').disabled = true;
             
             console.log('文件已清除');
+        }
+
+        // 音频拼接相关变量和函数
+        let spliceSegments = [];
+        let splicedAudioUrl = null;
+
+        // 添加音频片段到拼接列表
+        function addAudioSegment() {
+            if (!uploadedFile) {
+                alert('请先上传并处理音频文件！');
+                return;
+            }
+
+            // 确定使用的文件ID和相关信息
+            let fileId, filename, fileUrl;
+            
+            if (uploadedFile.processed_file_id) {
+                // 使用处理后的文件
+                fileId = uploadedFile.processed_file_id;
+                filename = uploadedFile.processed_filename || `${uploadedFile.processed_file_id}.mp3`;
+                // 构建完整的URL用于预览
+                fileUrl = window.location.origin + uploadedFile.processed_file_url;
+            } else if (uploadedFile.dify_file_id) {
+                // 使用原始文件
+                fileId = uploadedFile.dify_file_id;
+                filename = uploadedFile.name;
+                fileUrl = URL.createObjectURL(uploadedFile);
+            } else {
+                alert('请先处理音频文件或上传到服务器！');
+                return;
+            }
+
+            // 检查是否已经添加过这个片段
+            const existingSegment = spliceSegments.find(seg => seg.file_id === fileId);
+            if (existingSegment) {
+                alert('该音频片段已在拼接列表中！');
+                return;
+            }
+
+            // 添加到拼接列表
+            const segment = {
+                file_id: fileId,
+                filename: filename,
+                duration: uploadedFile.duration || 0,
+                url: fileUrl
+            };
+
+            spliceSegments.push(segment);
+            updateSpliceList();
+            updateSpliceButtons();
+            
+            console.log('添加音频片段:', segment);
+        }
+
+        // 更新拼接列表显示
+        function updateSpliceList() {
+            const listContainer = document.getElementById('spliceFilesList');
+            
+            if (spliceSegments.length === 0) {
+                listContainer.innerHTML = '<div class="empty-message">暂无音频片段，请先处理音频文件或添加片段</div>';
+                return;
+            }
+
+            let html = '';
+            spliceSegments.forEach((segment, index) => {
+                html += `
+                    <div class="splice-item" data-index="${index}">
+                        <div class="splice-item-info">
+                            <div class="splice-item-name">${segment.filename}</div>
+                            <div class="splice-item-duration">时长: ${formatDuration(segment.duration)}</div>
+                        </div>
+                        <div class="splice-item-controls">
+                            <button class="move-up" onclick="moveSpliceItem(${index}, -1)" ${index === 0 ? 'disabled' : ''}>↑</button>
+                            <button class="move-down" onclick="moveSpliceItem(${index}, 1)" ${index === spliceSegments.length - 1 ? 'disabled' : ''}>↓</button>
+                            <button class="remove-item" onclick="removeSpliceItem(${index})">×</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            listContainer.innerHTML = html;
+        }
+
+        // 移动拼接项目
+        function moveSpliceItem(index, direction) {
+            const newIndex = index + direction;
+            if (newIndex < 0 || newIndex >= spliceSegments.length) return;
+
+            // 交换位置
+            [spliceSegments[index], spliceSegments[newIndex]] = [spliceSegments[newIndex], spliceSegments[index]];
+            updateSpliceList();
+        }
+
+        // 删除拼接项目
+        function removeSpliceItem(index) {
+            spliceSegments.splice(index, 1);
+            updateSpliceList();
+            updateSpliceButtons();
+        }
+
+        // 更新拼接相关按钮状态
+        function updateSpliceButtons() {
+            const hasSegments = spliceSegments.length > 0;
+            document.getElementById('spliceBtn').disabled = !hasSegments;
+            document.getElementById('previewSpliceBtn').disabled = !hasSegments;
+        }
+
+        // 开始拼接音频
+        async function spliceAudio() {
+            if (spliceSegments.length === 0) {
+                alert('请先添加音频片段！');
+                return;
+            }
+
+            document.getElementById('spliceBtn').disabled = true;
+            document.getElementById('spliceProgress').style.display = 'block';
+            document.getElementById('spliceProgressText').textContent = '正在拼接音频...';
+
+            try {
+                const response = await fetch('/meeting_minutes/splice_audio', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        segments: spliceSegments.map(seg => ({
+                            file_id: seg.file_id,
+                            filename: seg.filename
+                        }))
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('音频拼接失败');
+                }
+
+                const result = await response.json();
+                if (result.success) {
+                    // 构建完整的URL
+                    const fullUrl = window.location.origin + result.spliced_file_url;
+                    splicedAudioUrl = fullUrl;
+                    document.getElementById('spliceProgressText').textContent = '拼接完成！';
+                    document.getElementById('downloadSpliceBtn').disabled = false;
+                    
+                    // 显示预览
+                    const previewContainer = document.getElementById('splicePreview');
+                    const audioPlayer = document.getElementById('spliceAudioPlayer');
+                    audioPlayer.src = fullUrl;
+                    previewContainer.style.display = 'block';
+                    
+                    setTimeout(() => {
+                        document.getElementById('spliceProgress').style.display = 'none';
+                    }, 2000);
+                } else {
+                    throw new Error(result.error || '拼接失败');
+                }
+
+            } catch (error) {
+                console.error('音频拼接失败:', error);
+                document.getElementById('spliceProgressText').textContent = '拼接失败: ' + error.message;
+                setTimeout(() => {
+                    document.getElementById('spliceProgress').style.display = 'none';
+                }, 3000);
+            } finally {
+                document.getElementById('spliceBtn').disabled = false;
+            }
+        }
+
+        // 预览拼接效果
+        async function previewSplice() {
+            if (spliceSegments.length === 0) {
+                alert('请先添加音频片段！');
+                return;
+            }
+
+            // 如果已经有拼接后的音频，直接预览
+            if (splicedAudioUrl) {
+                const previewContainer = document.getElementById('splicePreview');
+                const audioPlayer = document.getElementById('spliceAudioPlayer');
+                audioPlayer.src = splicedAudioUrl;
+                previewContainer.style.display = 'block';
+                audioPlayer.play();
+                return;
+            }
+
+            // 如果没有拼接后的音频，先执行拼接
+            try {
+                document.getElementById('previewBtn').disabled = true;
+                document.getElementById('previewBtn').textContent = '正在拼接...';
+                
+                await spliceAudio();
+                
+                // 拼接完成后预览
+                if (splicedAudioUrl) {
+                    const previewContainer = document.getElementById('splicePreview');
+                    const audioPlayer = document.getElementById('spliceAudioPlayer');
+                    audioPlayer.src = splicedAudioUrl;
+                    previewContainer.style.display = 'block';
+                    audioPlayer.play();
+                }
+            } catch (error) {
+                console.error('预览拼接失败:', error);
+                alert('预览拼接失败，请重试！');
+            } finally {
+                document.getElementById('previewBtn').disabled = false;
+                document.getElementById('previewBtn').textContent = '预览拼接';
+            }
+        }
+
+        // 下载拼接后的音频
+        function downloadSplicedAudio() {
+            if (!splicedAudioUrl) {
+                alert('请先拼接音频！');
+                return;
+            }
+
+            const a = document.createElement('a');
+            a.href = splicedAudioUrl;
+            a.download = `拼接音频_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.mp3`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // 清空拼接列表
+        function clearSpliceList() {
+            spliceSegments = [];
+            splicedAudioUrl = null;
+            updateSpliceList();
+            updateSpliceButtons();
+            document.getElementById('splicePreview').style.display = 'none';
+            document.getElementById('downloadSpliceBtn').disabled = true;
+        }
+
+        // 格式化时长显示
+        function formatDuration(seconds) {
+            if (!seconds || seconds === 0) return '未知';
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = Math.floor(seconds % 60);
+            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+        }
+
+        // 在音频处理完成后自动添加到拼接列表（可选）
+        function finishProcessing() {
+            isProcessing = false;
+            document.getElementById('processBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            document.getElementById('progressText').textContent = '处理完成！';
+            
+            // 更新音频播放器源
+            if (uploadedFile.processed_file_url) {
+                const audioPlayer = document.getElementById('audioPlayer');
+                audioPlayer.src = uploadedFile.processed_file_url;
+                processedAudioUrl = uploadedFile.processed_file_url;
+            } else {
+                processedAudioUrl = document.getElementById('audioPlayer').src;
+            }
+            
+            document.getElementById('previewBtn').disabled = false;
+            
+            setTimeout(() => {
+                document.getElementById('processProgress').style.display = 'none';
+            }, 2000);
         }
     </script>
 </body>
