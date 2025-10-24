@@ -103,7 +103,8 @@ def upload_audio():
             try:
                 # 重新读取文件以获取音频信息
                 file.seek(0)
-                temp_path = os.path.join(TEMP_DIR, f"temp_{upload_result['id']}{file_ext}")
+                temp_filename = f"{upload_result['id']}{file_ext}"
+                temp_path = os.path.join(TEMP_DIR, temp_filename)
                 with open(temp_path, 'wb') as temp_file:
                     temp_file.write(file.read())
                 
@@ -115,8 +116,8 @@ def upload_audio():
                     'sample_width': audio.sample_width
                 }
                 
-                # 清理临时文件
-                os.remove(temp_path)
+                # 保留临时文件供后续音频处理使用
+                logging.info(f"Saved temp file for processing: {temp_filename}")
             except Exception as e:
                 logging.warning(f"Failed to get audio info: {e}")
         
@@ -152,9 +153,12 @@ def process_audio():
             return jsonify({'error': '缺少文件ID'}), 400
         
         # 查找原始文件
-        original_files = [f for f in os.listdir(TEMP_DIR) if f.startswith(file_id)]
+        original_files = [f for f in os.listdir(TEMP_DIR) if f.startswith(file_id) or file_id in f]
         if not original_files:
-            return jsonify({'error': '找不到原始文件'}), 404
+            # 如果找不到文件，尝试使用file_id作为完整文件名查找
+            all_files = os.listdir(TEMP_DIR)
+            logging.error(f"Cannot find file with ID: {file_id}, available files: {all_files}")
+            return jsonify({'error': f'找不到原始文件，文件ID: {file_id}'}), 404
         
         original_file = os.path.join(TEMP_DIR, original_files[0])
         

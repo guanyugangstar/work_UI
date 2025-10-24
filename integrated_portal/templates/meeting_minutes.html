@@ -552,7 +552,7 @@
                 
                 // 存储服务器返回的文件ID，供后续使用
                 uploadedFile.dify_file_id = data.dify_file_id;
-                uploadedFile.original_file_id = data.dify_file_id.replace('dify_', ''); // 提取原始文件ID用于音频处理
+                uploadedFile.original_file_id = data.dify_file_id; // 直接使用dify_file_id作为原始文件ID
                 
                 console.log('文件上传成功，文件ID:', data.dify_file_id);
                 
