@@ -11,6 +11,8 @@ import logging
 # 检查音频处理依赖
 try:
     from pydub import AudioSegment
+    from pydub.effects import normalize, compress_dynamic_range
+    import numpy as np
     AUDIO_PROCESSING_AVAILABLE = True
 except ImportError:
     AUDIO_PROCESSING_AVAILABLE = False
@@ -431,8 +433,140 @@ def splice_audio():
         })
         
     except Exception as e:
-        logging.error(f"Audio splicing error: {e}")
-        return jsonify({'error': f'音频拼接失败: {str(e)}'}), 500
+            logging.error(f"Audio splicing error: {e}")
+            return jsonify({'error': f'音频拼接失败: {str(e)}'}), 500
+
+@meeting_minutes_bp.route('/optimize_audio', methods=['POST'])
+def optimize_audio():
+    """优化音频文件以提高ASR识别效果"""
+    if not AUDIO_PROCESSING_AVAILABLE:
+        return jsonify({'error': '音频处理功能不可用，请安装pydub'}), 500
+    
+    try:
+        # 检查是否有上传的文件
+        if 'audio_file' not in request.files:
+            return jsonify({'error': '缺少音频文件'}), 400
+        
+        audio_file = request.files['audio_file']
+        if audio_file.filename == '':
+            return jsonify({'error': '未选择文件'}), 400
+        
+        # 保存上传的文件到临时目录
+        temp_filename = str(uuid.uuid4()) + '_' + audio_file.filename
+        file_path = os.path.join(TEMP_DIR, temp_filename)
+        audio_file.save(file_path)
+        
+        # 获取优化参数（从表单数据）
+        target_sample_rate = int(request.form.get('target_sample_rate', 24000))
+        enhance_volume = request.form.get('enable_volume_enhancement', 'false').lower() == 'true'
+        remove_silence = request.form.get('enable_silence_removal', 'false').lower() == 'true'
+        normalize_audio = request.form.get('enable_normalization', 'false').lower() == 'true'
+        compress_audio = request.form.get('enable_dynamic_compression', 'false').lower() == 'true'
+        
+        # 生成优化后的文件名
+        filename = os.path.basename(file_path)
+        name, ext = os.path.splitext(filename)
+        optimized_filename = f"{name}_optimized{ext}"
+        optimized_path = os.path.join(TEMP_DIR, optimized_filename)
+        
+        logging.info(f"开始优化音频文件: {file_path}")
+        
+        # 加载音频文件
+        audio = AudioSegment.from_file(file_path)
+        original_info = {
+            'duration': len(audio) / 1000,
+            'sample_rate': audio.frame_rate,
+            'channels': audio.channels,
+            'sample_width': audio.sample_width
+        }
+        
+        # 1. 转换为单声道（如果是立体声）
+        if audio.channels > 1:
+            logging.info("转换为单声道...")
+            audio = audio.set_channels(1)
+        
+        # 2. 调整采样率
+        if audio.frame_rate != target_sample_rate:
+            logging.info(f"调整采样率从 {audio.frame_rate} Hz 到 {target_sample_rate} Hz...")
+            audio = audio.set_frame_rate(target_sample_rate)
+        
+        # 3. 标准化音频（增强音量）
+        if normalize_audio:
+            logging.info("标准化音频...")
+            audio = normalize(audio)
+        
+        # 4. 增强音量（如果音频太小声）
+        if enhance_volume:
+            rms = audio.rms
+            if rms < 1000:  # 如果RMS太低，增强音量
+                gain_db = 20 - (20 * np.log10(rms / 32767))  # 计算需要的增益
+                gain_db = min(gain_db, 20)  # 限制最大增益为20dB
+                logging.info(f"增强音量 {gain_db:.1f} dB...")
+                audio = audio + gain_db
+        
+        # 5. 压缩动态范围
+        if compress_audio:
+            logging.info("压缩动态范围...")
+            audio = compress_dynamic_range(audio, threshold=-20.0, ratio=4.0, attack=5.0, release=50.0)
+        
+        # 6. 去除静音段
+        if remove_silence:
+            logging.info("去除静音段...")
+            silence_threshold = audio.max_possible_amplitude * 0.01  # -40dB
+            
+            # 分割音频为小段，去除静音
+            chunk_length = 100  # 100ms chunks
+            chunks = []
+            
+            for i in range(0, len(audio), chunk_length):
+                chunk = audio[i:i + chunk_length]
+                if chunk.rms > silence_threshold:
+                    chunks.append(chunk)
+                elif len(chunks) > 0 and chunks[-1].rms > silence_threshold:
+                    # 保留一些静音作为间隔
+                    silence_chunk = AudioSegment.silent(duration=50)  # 50ms静音
+                    chunks.append(silence_chunk)
+            
+            if chunks:
+                audio = sum(chunks)
+                logging.info(f"去除静音后时长: {len(audio) / 1000:.2f} 秒")
+        
+        # 导出优化后的音频
+        audio.export(optimized_path, format="mp3", bitrate="128k")
+        
+        # 获取优化后的信息
+        optimized_info = {
+            'duration': len(audio) / 1000,
+            'sample_rate': audio.frame_rate,
+            'channels': audio.channels,
+            'file_size': os.path.getsize(optimized_path)
+        }
+        
+        logging.info(f"音频优化完成: {optimized_path}")
+        
+        return jsonify({
+            'success': True,
+            'optimized_filename': optimized_filename,
+            'optimized_file_url': f'/meeting_minutes/static/temp/{optimized_filename}',
+            'original_info': original_info,
+            'optimized_info': optimized_info,
+            'improvements': {
+                'duration_change': f"{((optimized_info['duration'] - original_info['duration']) / original_info['duration'] * 100):+.1f}%",
+                'sample_rate_before': original_info['sample_rate'],
+                'sample_rate_after': optimized_info['sample_rate'],
+                'channels_before': original_info['channels'],
+                'channels_after': optimized_info['channels'],
+                'sample_rate_optimized': original_info['sample_rate'] != target_sample_rate,
+                'converted_to_mono': original_info['channels'] > 1,
+                'volume_enhanced': enhance_volume,
+                'silence_removed': remove_silence
+            },
+            'message': '音频优化完成，已针对ASR识别进行优化'
+        })
+        
+    except Exception as e:
+        logging.error(f"Audio optimization error: {e}")
+        return jsonify({'error': f'音频优化失败: {str(e)}'}), 500
 
 @meeting_minutes_bp.route('/health')
 def health_check():

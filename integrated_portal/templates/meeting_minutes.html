@@ -406,6 +406,138 @@
             margin-right: 5px;
         }
 
+        .status-success {
+            background-color: #28a745;
+        }
+
+        .status-warning {
+            background-color: #ffc107;
+        }
+
+        .status-error {
+            background-color: #dc3545;
+        }
+
+        /* ASR优化面板样式 */
+        .asr-optimization-panel {
+            margin-top: 10px;
+            padding: 12px;
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            border-left: 4px solid #007bff;
+        }
+
+        .optimization-header {
+            font-size: 12px;
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .optimization-options {
+            display: grid;
+            gap: 8px;
+        }
+
+        .option-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .option-row:last-child {
+            border-bottom: none;
+        }
+
+        .option-row label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: #333;
+            cursor: pointer;
+            min-width: 120px;
+        }
+
+        .option-row input[type="checkbox"] {
+            margin: 0;
+            transform: scale(0.9);
+        }
+
+        .option-row select {
+            padding: 3px 6px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-size: 10px;
+            min-width: 120px;
+        }
+
+        .option-desc {
+            font-size: 10px;
+            color: #666;
+            font-style: italic;
+            flex: 1;
+            text-align: right;
+        }
+
+        .help-text {
+            font-size: 10px;
+            color: #666;
+            margin-top: 3px;
+            font-style: italic;
+        }
+
+        /* 优化结果显示 */
+        .optimization-result {
+            margin-top: 10px;
+            padding: 8px;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 4px;
+            font-size: 10px;
+        }
+
+        .optimization-result.error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+
+        .optimization-improvements {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        .improvement-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 9px;
+            padding: 2px 0;
+        }
+
+        .improvement-value {
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        .improvement-value.negative {
+            color: #dc3545;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+
         .status-ready { background-color: #28a745; }
         .status-processing { background-color: #ffc107; }
         .status-error { background-color: #dc3545; }
@@ -484,6 +616,58 @@
                                 <option value="medium" selected>中等质量</option>
                                 <option value="low">低质量</option>
                             </select>
+                        </div>
+                        
+                        <!-- ASR优化选项 -->
+                        <div class="option-group">
+                            <label>
+                                <input type="checkbox" id="enableASROptimization" checked>
+                                启用ASR优化预处理
+                            </label>
+                            <div class="help-text">自动优化音频以提高语音识别准确率</div>
+                        </div>
+                        
+                        <div id="asrOptimizationOptions" class="asr-optimization-panel">
+                            <div class="optimization-header">🎯 ASR优化设置</div>
+                            <div class="optimization-options">
+                                <div class="option-row">
+                                    <label>
+                                        <input type="checkbox" id="normalizeAudio" checked>
+                                        音频标准化
+                                    </label>
+                                    <span class="option-desc">增强音量，提高信噪比</span>
+                                </div>
+                                <div class="option-row">
+                                    <label>
+                                        <input type="checkbox" id="removeSilence" checked>
+                                        去除静音段
+                                    </label>
+                                    <span class="option-desc">移除长时间静音，提高处理效率</span>
+                                </div>
+                                <div class="option-row">
+                                    <label>
+                                        <input type="checkbox" id="enhanceVolume" checked>
+                                        音量增强
+                                    </label>
+                                    <span class="option-desc">自动调整音量到最佳水平</span>
+                                </div>
+                                <div class="option-row">
+                                    <label>
+                                        <input type="checkbox" id="compressAudio" checked>
+                                        动态范围压缩
+                                    </label>
+                                    <span class="option-desc">平衡音量差异，改善识别效果</span>
+                                </div>
+                                <div class="option-row">
+                                    <label>目标采样率:</label>
+                                    <select id="targetSampleRate">
+                                        <option value="16000">16kHz (标准)</option>
+                                        <option value="24000" selected>24kHz (推荐)</option>
+                                        <option value="48000">48kHz (高质量)</option>
+                                    </select>
+                                    <span class="option-desc">24kHz为ASR最佳采样率</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -697,6 +881,15 @@
             resultArea.textContent = '正在上传文件到服务器...';
 
             try {
+                // 检查是否启用ASR优化
+                const enableOptimization = document.getElementById('enableASROptimization').checked;
+                
+                if (enableOptimization) {
+                    resultArea.textContent = '正在进行ASR优化预处理...';
+                    await optimizeAudioForASR();
+                    resultArea.textContent = 'ASR优化完成，正在上传文件到服务器...';
+                }
+
                 const formData = new FormData();
                 formData.append('audio_file', uploadedFile);
                 
@@ -727,6 +920,119 @@
                 console.error('文件上传失败:', error);
                 resultArea.textContent = '文件上传失败: ' + error.message;
                 document.getElementById('processUploadBtn').disabled = false;
+            }
+        }
+
+        // ASR优化预处理函数
+        async function optimizeAudioForASR() {
+            if (!uploadedFile) {
+                throw new Error('没有可优化的音频文件');
+            }
+
+            try {
+                // 获取优化参数
+                const targetSampleRate = parseInt(document.getElementById('targetSampleRate').value);
+                const enableNormalization = document.getElementById('normalizeAudio').checked;
+                const enableSilenceRemoval = document.getElementById('removeSilence').checked;
+                const enableVolumeEnhancement = document.getElementById('enhanceVolume').checked;
+                const enableDynamicCompression = document.getElementById('compressAudio').checked;
+
+                // 创建FormData
+                const formData = new FormData();
+                formData.append('audio_file', uploadedFile);
+                formData.append('target_sample_rate', targetSampleRate);
+                formData.append('enable_normalization', enableNormalization);
+                formData.append('enable_silence_removal', enableSilenceRemoval);
+                formData.append('enable_volume_enhancement', enableVolumeEnhancement);
+                formData.append('enable_dynamic_compression', enableDynamicCompression);
+
+                const response = await fetch('/meeting_minutes/optimize_audio', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('音频优化失败');
+                }
+
+                const result = await response.json();
+                if (!result.success) {
+                    throw new Error(result.error || '音频优化失败');
+                }
+
+                // 显示优化结果
+                displayOptimizationResult(result);
+
+                // 创建优化后的文件对象
+                const optimizedBlob = await fetch(result.optimized_file_url).then(r => r.blob());
+                const optimizedFile = new File([optimizedBlob], result.optimized_filename, { type: 'audio/mpeg' });
+                
+                // 替换原始文件
+                uploadedFile = optimizedFile;
+                
+                console.log('音频优化完成:', result);
+                
+            } catch (error) {
+                console.error('音频优化失败:', error);
+                throw error;
+            }
+        }
+
+        // 显示优化结果
+        function displayOptimizationResult(result) {
+            const resultDiv = document.getElementById('optimizationResult');
+            if (!resultDiv) return;
+
+            const improvements = result.improvements || {};
+            
+            let html = `
+                <div class="optimization-result">
+                    <strong>✅ ASR优化完成</strong>
+                    <div class="optimization-improvements">
+                        <div class="improvement-item">
+                            <span>采样率:</span>
+                            <span class="improvement-value">${improvements.sample_rate_before || 'N/A'} → ${improvements.sample_rate_after || 'N/A'} Hz</span>
+                        </div>
+                        <div class="improvement-item">
+                            <span>声道:</span>
+                            <span class="improvement-value">${improvements.channels_before || 'N/A'} → ${improvements.channels_after || 1}</span>
+                        </div>
+                        <div class="improvement-item">
+                            <span>时长变化:</span>
+                            <span class="improvement-value">${improvements.duration_change || 'N/A'}</span>
+                        </div>
+                        <div class="improvement-item">
+                            <span>文件大小:</span>
+                            <span class="improvement-value">${formatFileSize(result.original_info?.file_size || 0)} → ${formatFileSize(result.optimized_info?.file_size || 0)}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            resultDiv.innerHTML = html;
+            resultDiv.style.display = 'block';
+        }
+
+        // 格式化文件大小
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // 切换优化选项显示/隐藏
+        function toggleOptimizationOptions() {
+            const checkbox = document.getElementById('enableASROptimization');
+            const panel = document.getElementById('optimizationOptionsPanel');
+            const result = document.getElementById('optimizationResult');
+            
+            if (checkbox.checked) {
+                panel.style.display = 'block';
+            } else {
+                panel.style.display = 'none';
+                if (result) result.style.display = 'none';
             }
         }
 
@@ -868,8 +1174,8 @@
 
         // 会议纪要生成相关
         async function generateMinutes() {
-            if (!uploadedFile) {
-                alert('请先选择音频文件！');
+            if (!uploadedFile && !splicedAudioUrl) {
+                alert('请先选择音频文件或拼接音频！');
                 return;
             }
 
@@ -887,39 +1193,64 @@
             try {
                 let fileId;
                 
-                // 优先使用处理后的文件ID，如果没有则使用原始文件ID
-                if (uploadedFile.processed_file_id) {
-                    fileId = uploadedFile.processed_file_id;
+                // 文件优先级：拼接文件 > 处理后文件 > 原始文件
+                if (splicedAudioUrl && splicedAudioFilename) {
+                    // 1. 优先使用拼接后的文件
+                    resultArea.textContent = '正在上传拼接后的音频文件...';
+                    console.log('使用拼接后的文件:', splicedAudioFilename);
+                    
+                    // 需要先将拼接文件上传到Dify获取file_id
+                    try {
+                        const response = await fetch(splicedAudioUrl);
+                        const blob = await response.blob();
+                        const file = new File([blob], splicedAudioFilename, { type: 'audio/mpeg' });
+                        
+                        const formData = new FormData();
+                        formData.append('audio_file', file);
+                        
+                        const uploadResp = await fetch('/meeting_minutes/upload_audio', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        if (!uploadResp.ok) {
+                            throw new Error('拼接音频文件上传失败');
+                        }
+
+                        const uploadData = await uploadResp.json();
+                        if (!uploadData.success || !uploadData.dify_file_id) {
+                            throw new Error('拼接音频文件上传失败: ' + (uploadData.error || '未知错误'));
+                        }
+                        
+                        fileId = uploadData.dify_file_id;
+                        resultArea.textContent = '拼接音频文件上传成功，正在生成会议纪要...';
+                    } catch (error) {
+                        console.error('拼接文件上传失败，尝试使用其他文件:', error);
+                        // 如果拼接文件上传失败，降级到处理后的文件
+                         if (uploadedFile && uploadedFile.dify_processed_file_id) {
+                             fileId = uploadedFile.dify_processed_file_id;
+                             resultArea.textContent = '使用处理后的音频文件生成会议纪要...';
+                             console.log('降级使用处理后文件的Dify ID:', fileId);
+                        } else if (uploadedFile && uploadedFile.dify_file_id) {
+                            fileId = uploadedFile.dify_file_id;
+                            resultArea.textContent = '使用原始音频文件生成会议纪要...';
+                            console.log('降级使用原始文件ID:', fileId);
+                        } else {
+                            throw new Error('没有可用的音频文件');
+                        }
+                    }
+                } else if (uploadedFile && uploadedFile.dify_processed_file_id) {
+                    // 2. 使用处理后文件上传到Dify的ID
+                    fileId = uploadedFile.dify_processed_file_id;
                     resultArea.textContent = '使用处理后的音频文件生成会议纪要...';
-                    console.log('使用处理后的文件ID:', fileId);
-                } else if (uploadedFile.dify_file_id) {
+                    console.log('使用处理后文件的Dify ID:', fileId);
+                } else if (uploadedFile && uploadedFile.dify_file_id) {
+                    // 3. 使用原始文件ID
                     fileId = uploadedFile.dify_file_id;
                     resultArea.textContent = '使用原始音频文件生成会议纪要...';
                     console.log('使用原始文件ID:', fileId);
                 } else {
-                    // 如果文件还没上传，先上传文件
-                    resultArea.textContent = '正在上传音频文件...';
-                    
-                    const formData = new FormData();
-                    formData.append('audio_file', uploadedFile);
-                    
-                    const uploadResp = await fetch('/meeting_minutes/upload_audio', {
-                        method: 'POST',
-                        body: formData
-                    });
-
-                    if (!uploadResp.ok) {
-                        throw new Error('音频文件上传失败');
-                    }
-
-                    const uploadData = await uploadResp.json();
-                    if (!uploadData.success || !uploadData.dify_file_id) {
-                        throw new Error('音频文件上传失败: ' + (uploadData.error || '未知错误'));
-                    }
-                    
-                    fileId = uploadData.dify_file_id;
-                    uploadedFile.dify_file_id = fileId; // 保存文件ID供下次使用
-                    resultArea.textContent = '音频文件上传成功，正在生成会议纪要...';
+                    throw new Error('没有可用的音频文件');
                 }
 
                 // 2. 调用生成会议纪要的API
