@@ -2372,6 +2372,60 @@ body {
     left: 0;
 }
 
+/* 快速上手步骤样式 */
+.guide-steps {
+    margin-top: var(--spacing-3);
+}
+
+.step-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-3);
+    padding: var(--spacing-2) 0;
+    border-left: 2px solid var(--border-color);
+    padding-left: var(--spacing-4);
+    margin-left: var(--spacing-3);
+    position: relative;
+}
+
+.step-item:not(:last-child) {
+    margin-bottom: var(--spacing-2);
+}
+
+.step-item::before {
+    content: '';
+    position: absolute;
+    left: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 10px;
+    height: 10px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 0 0 2px var(--primary-color);
+}
+
+.step-number {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.step-text {
+    font-size: var(--font-size-sm);
+    color: #4a4a4a;
+    line-height: 1.4;
+}
+
 .guide-start {
     width: 100%;
     padding: var(--spacing-3) var(--spacing-4);

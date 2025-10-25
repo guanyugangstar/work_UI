@@ -16,53 +16,63 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 15px;
-            font-size: 16px; /* 增加基础字体大小 */
+            padding: 10px;
+            font-size: 16px;
             line-height: 1.6;
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1600px;
             margin: 0 auto;
             background: white;
             border-radius: 12px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.15);
             overflow: hidden;
+            height: calc(100vh - 20px);
+            display: flex;
+            flex-direction: column;
         }
 
         .header {
             background: linear-gradient(135deg, #ff6b35, #f7931e);
             color: white;
-            padding: 20px 30px;
+            padding: 15px 30px;
             text-align: center;
+            flex-shrink: 0;
         }
 
         .header h1 {
-            font-size: 32px; /* 增大标题字体 */
-            margin-bottom: 8px;
+            font-size: 28px;
+            margin-bottom: 5px;
             font-weight: 600;
         }
 
         .header p {
-            font-size: 18px; /* 增大副标题字体 */
+            font-size: 16px;
             opacity: 0.9;
         }
 
         /* 新的流程式布局 */
         .workflow-container {
-            padding: 25px;
-            display: flex;
-            flex-direction: column;
-            gap: 25px;
+            padding: 15px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            flex: 1;
+            overflow-y: auto;
         }
 
         .workflow-step {
             background: #f8f9fa;
             border: 2px solid #e9ecef;
             border-radius: 12px;
-            padding: 20px;
+            padding: 15px;
             position: relative;
             transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            height: fit-content;
+            min-height: 600px; /* 设置统一的最小高度 */
         }
 
         .workflow-step:hover {
@@ -73,32 +83,34 @@
         .step-header {
             background: linear-gradient(135deg, #007bff, #0056b3);
             color: white;
-            padding: 12px 20px;
-            margin: -20px -20px 20px -20px;
+            padding: 10px 15px;
+            margin: -15px -15px 15px -15px;
             border-radius: 12px 12px 0 0;
             font-weight: 600;
-            font-size: 20px; /* 增大步骤标题字体 */
+            font-size: 16px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
+            flex-shrink: 0;
         }
 
         .step-number {
             background: rgba(255,255,255,0.2);
-            width: 32px; /* 增大步骤编号圆圈 */
-            height: 32px;
+            width: 28px;
+            height: 28px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 18px; /* 增大步骤编号字体 */
+            font-size: 16px;
         }
 
         .step-content {
             display: flex;
-            gap: 20px;
-            align-items: flex-start;
+            flex-direction: column;
+            gap: 15px;
+            flex: 1;
         }
 
         .step-main {
@@ -341,6 +353,12 @@
             font-weight: 600;
         }
 
+        .header-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
         .splice-files-list {
             border: 2px solid #ddd;
             border-radius: 8px;
@@ -389,6 +407,13 @@
             font-weight: 600;
             color: #333;
             font-size: 18px; /* 增大拼接项名称字体 */
+        }
+
+        .file-type-label {
+            font-size: 14px;
+            color: #888;
+            font-weight: normal;
+            margin-left: 8px;
         }
 
         .splice-item-duration {
@@ -478,8 +503,8 @@
             background: linear-gradient(135deg, #f8f9fa, #e9ecef);
             border: 2px solid #28a745;
             border-radius: 12px;
-            padding: 25px; /* 增大结果区域内边距 */
-            min-height: 250px; /* 增大最小高度 */
+            padding: 15px; /* 减少内边距，让文本更贴近边框 */
+            min-height: 350px; /* 增大最小高度以匹配其他卡片 */
             max-height: 450px; /* 增大最大高度 */
             overflow-y: auto;
             font-size: 18px; /* 增大结果区域字体 */
@@ -487,6 +512,7 @@
             white-space: pre-wrap;
             line-height: 1.6;
             color: #333;
+            text-align: left; /* 确保文本左对齐 */
         }
 
         /* 按钮样式优化 */
@@ -494,21 +520,24 @@
             background: linear-gradient(135deg, #007bff, #0056b3);
             color: white;
             border: none;
-            padding: 14px 28px; /* 增大按钮内边距 */
+            padding: 10px 20px;
             border-radius: 8px;
             cursor: pointer;
-            font-size: 18px; /* 增大按钮字体 */
-            font-weight: 500;
+            font-size: 14px;
+            font-weight: 600;
             transition: all 0.3s ease;
             margin: 4px;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            justify-content: center;
+            gap: 6px;
+            min-height: 40px;
+            white-space: nowrap;
         }
 
         .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 16px rgba(0,123,255,0.3);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,123,255,0.3);
         }
 
         .btn:disabled {
@@ -519,32 +548,131 @@
         }
 
         .btn-success {
-            background: linear-gradient(135deg, #28a745, #20c997);
+            background: linear-gradient(135deg, #28a745, #1e7e34);
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background: linear-gradient(135deg, #1e7e34, #155724);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(40,167,69,0.3);
         }
 
         .btn-warning {
-            background: linear-gradient(135deg, #ffc107, #fd7e14);
+            background: linear-gradient(135deg, #ffc107, #e0a800);
+            color: #212529;
+        }
+
+        .btn-warning:hover:not(:disabled) {
+            background: linear-gradient(135deg, #e0a800, #d39e00);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255,193,7,0.3);
         }
 
         .btn-danger {
             background: linear-gradient(135deg, #dc3545, #c82333);
         }
 
+        .btn-danger:hover:not(:disabled) {
+            background: linear-gradient(135deg, #c82333, #bd2130);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(220,53,69,0.3);
+        }
+
         .btn-primary {
             background: linear-gradient(135deg, #007bff, #0056b3);
         }
 
+        .btn-primary:hover:not(:disabled) {
+            background: linear-gradient(135deg, #0056b3, #004085);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+        }
+
         .btn-small {
-            padding: 10px 18px; /* 增大小按钮内边距 */
-            font-size: 16px; /* 增大小按钮字体 */
+            padding: 8px 16px;
+            font-size: 12px;
+            min-height: 32px;
         }
 
         .button-group {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             flex-wrap: wrap;
             justify-content: center;
-            margin-top: 20px;
+            margin-top: 15px;
+        }
+
+        /* 表单控件优化 */
+        .form-control {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+        }
+
+        /* 上传区域优化 */
+        .upload-area {
+            border: 3px dashed #ddd;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            background: #fafafa;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .upload-area:hover {
+            border-color: #007bff;
+            background: #f0f8ff;
+        }
+
+        .upload-area.dragover {
+            border-color: #007bff;
+            background: #e3f2fd;
+        }
+
+        .upload-text {
+            font-size: 14px;
+            color: #666;
+            margin: 0;
+        }
+
+        .upload-hint {
+            font-size: 12px;
+            color: #999;
+            margin: 0;
+        }
+
+        /* 进度条优化 */
+        .progress-container {
+            margin: 10px 0;
+            background: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            height: 6px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #007bff, #0056b3);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            width: 0%;
         }
 
         /* 状态指示器优化 */
@@ -614,8 +742,166 @@
             color: #dc3545;
         }
 
+        /* 模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid #e9ecef;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: white;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+
+        .modal-close:hover {
+            opacity: 1;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            padding: 20px 24px;
+            border-top: 1px solid #e9ecef;
+            background-color: #f8f9fa;
+            border-radius: 0 0 12px 12px;
+        }
+
+        .asr-trigger-label {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            padding: 8px;
+            border-radius: 6px;
+        }
+
+        .asr-trigger-label:hover {
+            background-color: #f0f0f0;
+        }
+
+        /* 模态框动画 */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { 
+                opacity: 0;
+                transform: translateY(-50px) scale(0.9);
+            }
+        }
+        </style>
+
+        <script>
+         // 拼接音频ASR优化模态框控制函数
+         function openSpliceAsrModal() {
+             const modal = document.getElementById('spliceAsrOptimizationModal');
+             if (modal) {
+                 modal.classList.add('show');
+                 modal.style.display = 'flex';
+             }
+         }
+
+         function closeSpliceAsrModal() {
+             const modal = document.getElementById('spliceAsrOptimizationModal');
+             modal.classList.remove('show');
+             setTimeout(() => {
+                 modal.style.display = 'none';
+             }, 300);
+         }
+
+         function applySpliceAsrSettings() {
+             // 获取所有设置值
+             const settings = {
+                 normalizeAudio: document.getElementById('spliceNormalizeAudio').checked,
+                 removeSilence: document.getElementById('spliceRemoveSilence').checked,
+                 enhanceVolume: document.getElementById('spliceEnhanceVolume').checked,
+                 compressAudio: document.getElementById('spliceCompressAudio').checked,
+                 targetSampleRate: document.getElementById('spliceTargetSampleRate').value
+             };
+
+             // 更新主页面的ASR优化checkbox状态
+             const enableSpliceASROptimization = document.getElementById('enableSpliceASROptimization');
+             const hasAnyOptimization = settings.normalizeAudio || settings.removeSilence || 
+                                      settings.enhanceVolume || settings.compressAudio;
+             enableSpliceASROptimization.checked = hasAnyOptimization;
+
+             // 保存设置到全局变量或localStorage
+             window.spliceAsrSettings = settings;
+             localStorage.setItem('spliceAsrSettings', JSON.stringify(settings));
+
+             closeSpliceAsrModal();
+             
+             // 显示应用成功提示
+             const helpText = document.querySelector('#spliceAsrOptimizationTrigger').parentElement.nextElementSibling;
+             const originalText = helpText.textContent;
+             helpText.textContent = '✓ 设置已应用';
+             helpText.style.color = '#28a745';
+             setTimeout(() => {
+                 helpText.textContent = originalText;
+                 helpText.style.color = '';
+             }, 2000);
+         }
+         </script>
+    </style>
+
+    <!-- 响应式设计 -->
+    <style>
         /* 响应式设计 */
         @media (max-width: 1200px) {
+            .workflow-container {
+                grid-template-columns: 1fr 1fr;
+            }
+            
             .step-content {
                 flex-direction: column;
             }
@@ -634,39 +920,53 @@
         }
 
         @media (max-width: 768px) {
+            .workflow-container {
+                grid-template-columns: 1fr;
+                padding: 10px;
+            }
+            
             .container {
+                height: auto;
+                min-height: calc(100vh - 20px);
                 margin: 10px;
             }
             
-            .workflow-container {
-                padding: 15px;
-            }
-            
-            .header h1 {
-                font-size: 24px;
-            }
-            
-            .header p {
-                font-size: 14px;
+            .workflow-step {
+                padding: 12px;
             }
             
             .step-header {
-                font-size: 16px;
+                padding: 8px 12px;
+                margin: -12px -12px 12px -12px;
+                font-size: 14px;
             }
             
-            .button-group {
-                justify-content: stretch;
+            .step-number {
+                width: 24px;
+                height: 24px;
+                font-size: 14px;
             }
             
             .btn {
-                flex: 1;
-                justify-content: center;
+                padding: 8px 16px;
+                font-size: 12px;
+                min-height: 36px;
+            }
+            
+            .upload-area {
+                padding: 15px;
+                min-height: 80px;
             }
         }
 
         /* 隐藏元素 */
         .hidden {
             display: none !important;
+        }
+
+        /* 音频拼接卡片特殊样式 - 调整内容区域高度以对齐按钮 */
+        .workflow-step:nth-child(2) .step-main {
+            min-height: 450px;
         }
     </style>
 </head>
@@ -678,11 +978,11 @@
         </div>
 
         <div class="workflow-container">
-            <!-- 步骤1: 音频文件上传 -->
+            <!-- 步骤1: 音频文件上传与处理 -->
             <div class="workflow-step">
                 <div class="step-header">
                     <div class="step-number">1</div>
-                    <span>📁 音频文件上传</span>
+                    <span>📁 音频文件上传与处理</span>
                 </div>
                 <div class="step-content">
                     <div class="step-main">
@@ -698,25 +998,11 @@
                         <div id="uploadSuccess" class="success-message">
                             ✅ 文件上传成功！
                         </div>
-                    </div>
-                    <div class="step-controls">
-                        <div class="button-group">
-                            <button class="btn" onclick="document.getElementById('audioFile').click()">选择文件</button>
-                            <button class="btn btn-success" onclick="processUploadedFile()" id="processUploadBtn" disabled>处理文件</button>
-                            <button class="btn btn-warning" onclick="clearFile()">清除文件</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- 步骤2: 音频处理 -->
-            <div class="workflow-step">
-                <div class="step-header">
-                    <div class="step-number">2</div>
-                    <span>🎵 音频处理</span>
-                </div>
-                <div class="step-content">
-                    <div class="step-main">
+                        <audio id="audioPlayer" class="audio-player" controls style="display: none;">
+                            您的浏览器不支持音频播放。
+                        </audio>
+
                         <div class="processing-grid">
                             <div class="option-group">
                                 <label>开始时间 (秒):</label>
@@ -735,60 +1021,13 @@
                                 </select>
                             </div>
                             <div class="option-group">
-                                <label>
-                                    <input type="checkbox" id="enableASROptimization" checked>
+                                <label id="asrOptimizationTrigger" class="asr-trigger-label">
+                                    <input type="checkbox" id="enableASROptimization">
                                     启用ASR优化预处理
                                 </label>
-                                <div class="help-text">自动优化音频以提高语音识别准确率</div>
+                                <div class="help-text">点击设置ASR优化参数</div>
                             </div>
                         </div>
-
-                        <div id="asrOptimizationOptions" class="asr-optimization-panel">
-                            <div class="optimization-header">🎯 ASR优化设置</div>
-                            <div class="optimization-options">
-                                <div class="option-row">
-                                    <label>
-                                        <input type="checkbox" id="normalizeAudio" checked>
-                                        音频标准化
-                                    </label>
-                                    <span class="option-desc">增强音量，提高信噪比</span>
-                                </div>
-                                <div class="option-row">
-                                    <label>
-                                        <input type="checkbox" id="removeSilence" checked>
-                                        去除静音段
-                                    </label>
-                                    <span class="option-desc">移除长时间静音，提高处理效率</span>
-                                </div>
-                                <div class="option-row">
-                                    <label>
-                                        <input type="checkbox" id="enhanceVolume" checked>
-                                        音量增强
-                                    </label>
-                                    <span class="option-desc">自动调整音量到最佳水平</span>
-                                </div>
-                                <div class="option-row">
-                                    <label>
-                                        <input type="checkbox" id="compressAudio" checked>
-                                        动态范围压缩
-                                    </label>
-                                    <span class="option-desc">平衡音量差异，改善识别效果</span>
-                                </div>
-                                <div class="option-row">
-                                    <label>目标采样率:</label>
-                                    <select id="targetSampleRate">
-                                        <option value="16000">16kHz (标准)</option>
-                                        <option value="24000" selected>24kHz (推荐)</option>
-                                        <option value="48000">48kHz (高质量)</option>
-                                    </select>
-                                    <span class="option-desc">24kHz为ASR最佳采样率</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <audio id="audioPlayer" class="audio-player" controls style="display: none;">
-                            您的浏览器不支持音频播放。
-                        </audio>
 
                         <div class="progress-container" id="processProgress" style="display: none;">
                             <div class="progress-bar">
@@ -799,20 +1038,21 @@
                     </div>
                     <div class="step-controls">
                         <div class="button-group">
+                            <button class="btn" onclick="document.getElementById('audioFile').click()">选择文件</button>
                             <button class="btn btn-success" onclick="processAudio()" id="processBtn" disabled>
                                 <span class="status-indicator status-ready"></span>处理音频
                             </button>
                             <button class="btn" onclick="previewAudio()" id="previewBtn" disabled>预览</button>
-                            <button class="btn btn-danger" onclick="stopProcessing()" id="stopBtn" disabled>停止</button>
+                            <button class="btn btn-warning" onclick="clearFile()">清除</button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 步骤3: 音频拼接 -->
+            <!-- 步骤2: 音频拼接 -->
             <div class="workflow-step">
                 <div class="step-header">
-                    <div class="step-number">3</div>
+                    <div class="step-number">2</div>
                     <span>🎬 音频拼接</span>
                 </div>
                 <div class="step-content">
@@ -824,7 +1064,11 @@
                         <div class="splice-files-container">
                             <div class="splice-files-header">
                                 <h4>音频片段列表</h4>
-                                <button class="btn btn-small" onclick="addAudioSegment()">添加片段</button>
+                                <div class="header-controls">
+                                    <input type="file" id="localAudioFile" accept="audio/*" multiple style="display: none;" onchange="handleLocalAudioFiles(event)">
+                                    <button class="btn btn-small" onclick="document.getElementById('localAudioFile').click()">选择本地文件</button>
+                                    <button class="btn btn-small" onclick="addAudioSegment()">添加已处理片段</button>
+                                </div>
                             </div>
                             <div class="splice-files-list" id="spliceFilesList">
                                 <div class="empty-message">暂无音频片段，请先处理音频文件或添加片段</div>
@@ -844,24 +1088,35 @@
                             </div>
                             <div class="progress-text" id="spliceProgressText">拼接中...</div>
                         </div>
+                        
+                        <!-- ASR优化选项 -->
+                        <div class="option-group" style="margin-top: 15px;">
+                            <div class="asr-trigger-container">
+                                <label id="spliceAsrOptimizationTrigger" class="asr-trigger-label">
+                                    <input type="checkbox" id="enableSpliceASROptimization">
+                                    启用ASR优化预处理（拼接后）
+                                </label>
+                            </div>
+                            <div class="help-text">点击设置ASR优化参数</div>
+                        </div>
                     </div>
                     <div class="step-controls">
                         <div class="button-group">
                             <button class="btn btn-success" onclick="spliceAudio()" id="spliceBtn" disabled>
                                 <span class="status-indicator status-ready"></span>开始拼接
                             </button>
-                            <button class="btn" onclick="previewSplice()" id="previewSpliceBtn" disabled>预览拼接</button>
-                            <button class="btn btn-primary" onclick="downloadSplicedAudio()" id="downloadSpliceBtn" disabled>下载拼接音频</button>
+                            <button class="btn" onclick="previewSplice()" id="previewSpliceBtn" disabled>预览</button>
+                            <button class="btn btn-primary" onclick="downloadSplicedAudio()" id="downloadSpliceBtn" disabled>下载</button>
                             <button class="btn btn-warning" onclick="clearSpliceList()">清空列表</button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 步骤4: 会议纪要生成和显示 -->
+            <!-- 步骤3: 会议纪要生成和显示 -->
             <div class="workflow-step">
                 <div class="step-header">
-                    <div class="step-number">4</div>
+                    <div class="step-number">3</div>
                     <span>📝 会议纪要生成和显示</span>
                 </div>
                 <div class="step-content">
@@ -877,9 +1132,7 @@
                             </div>
                         </div>
 
-                        <div class="result-area" id="minutesResult">
-                            文件上传后即可生成会议纪要，无需等待音频处理完成...
-                        </div>
+                        <div class="result-area" id="minutesResult">文件上传后即可生成会议纪要，无需等待音频处理完成...</div>
                     </div>
                     <div class="step-controls">
                         <div class="button-group">
@@ -1017,9 +1270,8 @@
                 uploadedFile.dify_file_id = data.dify_file_id;
                 uploadedFile.original_file_id = data.dify_file_id;
                 
-                // 启用生成会议纪要按钮，保持处理文件按钮启用（用于ASR优化等功能）
+                // 启用生成会议纪要按钮和音频处理按钮
                 document.getElementById('generateBtn').disabled = false;
-                document.getElementById('processUploadBtn').disabled = false;
                 document.getElementById('processBtn').disabled = false;
                 
                 // 显示音频播放器
@@ -1047,7 +1299,6 @@
                 
                 // 保持按钮禁用状态
                 document.getElementById('generateBtn').disabled = true;
-                document.getElementById('processUploadBtn').disabled = true;
                 document.getElementById('processBtn').disabled = true;
             }
         }
@@ -1059,7 +1310,6 @@
                 return;
             }
 
-            document.getElementById('processUploadBtn').disabled = true;
             const resultArea = document.getElementById('minutesResult');
             const originalText = resultArea.textContent;
             resultArea.textContent = '正在上传文件到服务器...';
@@ -1103,7 +1353,6 @@
             } catch (error) {
                 console.error('文件上传失败:', error);
                 resultArea.textContent = '文件上传失败: ' + error.message;
-                document.getElementById('processUploadBtn').disabled = false;
             }
         }
 
@@ -1225,7 +1474,6 @@
             document.getElementById('audioFile').value = '';
             document.getElementById('uploadSuccess').style.display = 'none';
             document.getElementById('audioPlayer').style.display = 'none';
-            document.getElementById('processUploadBtn').disabled = true;
             document.getElementById('processBtn').disabled = true;
             document.getElementById('previewBtn').disabled = true;
             document.getElementById('generateBtn').disabled = true;
@@ -1241,7 +1489,7 @@
 
             // 检查文件是否已上传到服务器
             if (!uploadedFile.dify_file_id) {
-                alert('请先点击"处理文件"上传音频文件到服务器！');
+                alert('请先上传音频文件到服务器！');
                 return;
             }
 
@@ -1557,7 +1805,6 @@
             document.getElementById('uploadSuccess').style.display = 'none';
             
             // 禁用相关按钮
-            document.getElementById('processUploadBtn').disabled = true;
             document.getElementById('processBtn').disabled = true;
             document.getElementById('previewBtn').disabled = true;
             document.getElementById('generateBtn').disabled = true;
@@ -1578,6 +1825,70 @@
         let spliceSegments = [];
         let splicedAudioUrl = null;
         let splicedAudioFilename = null;
+
+        // 处理本地音频文件选择
+        function handleLocalAudioFiles(event) {
+            const files = event.target.files;
+            if (!files || files.length === 0) {
+                return;
+            }
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                
+                // 验证文件类型
+                if (!file.type.startsWith('audio/')) {
+                    alert(`文件 "${file.name}" 不是有效的音频文件！`);
+                    continue;
+                }
+
+                // 验证文件大小（限制为50MB）
+                const maxSize = 50 * 1024 * 1024; // 50MB
+                if (file.size > maxSize) {
+                    alert(`文件 "${file.name}" 过大，请选择小于50MB的音频文件！`);
+                    continue;
+                }
+
+                // 检查是否已经添加过这个文件
+                const existingSegment = spliceSegments.find(seg => seg.filename === file.name && seg.type === 'local');
+                if (existingSegment) {
+                    alert(`文件 "${file.name}" 已在拼接列表中！`);
+                    continue;
+                }
+
+                // 创建本地文件对象URL
+                const fileUrl = URL.createObjectURL(file);
+                
+                // 获取音频时长
+                const audio = new Audio();
+                audio.src = fileUrl;
+                audio.addEventListener('loadedmetadata', function() {
+                    const duration = audio.duration;
+                    
+                    // 添加到拼接列表
+                    const segment = {
+                        file_id: `local_${Date.now()}_${i}`, // 生成唯一ID
+                        filename: file.name,
+                        duration: duration,
+                        file_url: fileUrl,
+                        file_object: file, // 保存原始文件对象
+                        type: 'local' // 标记为本地文件
+                    };
+
+                    spliceSegments.push(segment);
+                    updateSpliceList();
+                    updateSpliceButtons();
+                });
+                
+                audio.addEventListener('error', function() {
+                    alert(`无法加载音频文件 "${file.name}"，请检查文件是否损坏！`);
+                    URL.revokeObjectURL(fileUrl); // 清理URL对象
+                });
+            }
+
+            // 清空文件输入框
+            event.target.value = '';
+        }
 
         // 添加音频片段到拼接列表
         function addAudioSegment() {
@@ -1632,16 +1943,23 @@
             const listContainer = document.getElementById('spliceFilesList');
             
             if (spliceSegments.length === 0) {
-                listContainer.innerHTML = '<div class="empty-message">暂无音频片段，请先处理音频文件或添加片段</div>';
+                listContainer.innerHTML = '<div class="empty-message">暂无音频片段，请先处理音频文件或选择本地文件</div>';
                 return;
             }
 
             let html = '';
             spliceSegments.forEach((segment, index) => {
+                // 根据文件类型显示不同的标识
+                const typeIcon = segment.type === 'local' ? '📁' : '🎵';
+                const typeLabel = segment.type === 'local' ? '本地文件' : '已处理';
+                
                 html += `
                     <div class="splice-item" data-index="${index}">
                         <div class="splice-item-info">
-                            <div class="splice-item-name">${segment.filename}</div>
+                            <div class="splice-item-name">
+                                ${typeIcon} ${segment.filename}
+                                <span class="file-type-label">(${typeLabel})</span>
+                            </div>
                             <div class="splice-item-duration">时长: ${formatDuration(segment.duration)}</div>
                         </div>
                         <div class="splice-item-controls">
@@ -1667,11 +1985,18 @@
          }
 
          // 删除拼接项目
-         function removeSpliceItem(index) {
-             spliceSegments.splice(index, 1);
-             updateSpliceList();
-             updateSpliceButtons();
-         }
+        function removeSpliceItem(index) {
+            const segment = spliceSegments[index];
+            
+            // 如果是本地文件，需要清理URL对象
+            if (segment && segment.type === 'local' && segment.file_url) {
+                URL.revokeObjectURL(segment.file_url);
+            }
+            
+            spliceSegments.splice(index, 1);
+            updateSpliceList();
+            updateSpliceButtons();
+        }
 
          // 更新拼接相关按钮状态
          function updateSpliceButtons() {
@@ -1681,43 +2006,101 @@
          }
 
          // 开始拼接音频
-         async function spliceAudio() {
-             if (spliceSegments.length === 0) {
-                 alert('请先添加音频片段！');
-                 return;
-             }
+        async function spliceAudio() {
+            if (spliceSegments.length === 0) {
+                alert('请先添加音频片段！');
+                return;
+            }
 
-             document.getElementById('spliceBtn').disabled = true;
-             document.getElementById('spliceProgress').style.display = 'block';
-             document.getElementById('spliceProgressText').textContent = '正在拼接音频...';
+            document.getElementById('spliceBtn').disabled = true;
+            document.getElementById('spliceProgress').style.display = 'block';
+            document.getElementById('spliceProgressText').textContent = '正在准备拼接...';
 
-             try {
-                 const response = await fetch('/meeting_minutes/splice_audio', {
-                     method: 'POST',
-                     headers: { 'Content-Type': 'application/json' },
-                     body: JSON.stringify({
-                         segments: spliceSegments.map(seg => ({
-                             file_id: seg.file_id,
-                             filename: seg.filename
-                         }))
-                     })
-                 });
+            try {
+                // 检查是否有本地文件需要先上传
+                const localFiles = spliceSegments.filter(seg => seg.type === 'local');
+                const processedSegments = [...spliceSegments];
 
-                 if (!response.ok) {
-                     throw new Error('音频拼接失败');
-                 }
+                if (localFiles.length > 0) {
+                    document.getElementById('spliceProgressText').textContent = `正在上传本地文件 (0/${localFiles.length})...`;
+                    
+                    // 逐个上传本地文件
+                    for (let i = 0; i < localFiles.length; i++) {
+                        const localFile = localFiles[i];
+                        document.getElementById('spliceProgressText').textContent = `正在上传本地文件 (${i + 1}/${localFiles.length})...`;
+                        
+                        // 创建FormData上传文件
+                        const formData = new FormData();
+                        formData.append('audio_file', localFile.file_object);
+                        
+                        const uploadResponse = await fetch('/meeting_minutes/upload_audio', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        if (!uploadResponse.ok) {
+                            throw new Error(`上传文件 "${localFile.filename}" 失败`);
+                        }
+                        
+                        const uploadResult = await uploadResponse.json();
+                        if (!uploadResult.success) {
+                            throw new Error(`上传文件 "${localFile.filename}" 失败: ${uploadResult.error || '未知错误'}`);
+                        }
+                        
+                        // 更新segment信息，使用上传后的file_id
+                        const segmentIndex = processedSegments.findIndex(seg => seg.file_id === localFile.file_id);
+                        if (segmentIndex !== -1) {
+                            processedSegments[segmentIndex].file_id = uploadResult.dify_file_id;
+                            processedSegments[segmentIndex].type = 'uploaded'; // 标记为已上传
+                        }
+                    }
+                }
 
-                 const result = await response.json();
-                 if (result.success) {
-                     // 构建完整的URL
-                     const fullUrl = window.location.origin + result.spliced_file_url;
-                     splicedAudioUrl = fullUrl;
-                     splicedAudioFilename = result.spliced_filename;
-                     document.getElementById('spliceProgressText').textContent = '拼接完成！';
-                     document.getElementById('downloadSpliceBtn').disabled = false;
-                     
-                     // 显示预览
-                     const previewContainer = document.getElementById('splicePreview');
+                document.getElementById('spliceProgressText').textContent = '正在拼接音频...';
+
+                // 执行拼接
+                const enableASROptimization = document.getElementById('enableSpliceASROptimization').checked;
+                
+                // 获取详细的ASR优化参数
+                let asrOptimizationParams = {};
+                if (enableASROptimization && window.spliceAsrSettings) {
+                    asrOptimizationParams = {
+                        normalize_audio: window.spliceAsrSettings.normalizeAudio,
+                        remove_silence: window.spliceAsrSettings.removeSilence,
+                        enhance_volume: window.spliceAsrSettings.enhanceVolume,
+                        compress_audio: window.spliceAsrSettings.compressAudio,
+                        target_sample_rate: parseInt(window.spliceAsrSettings.targetSampleRate)
+                    };
+                }
+                
+                const response = await fetch('/meeting_minutes/splice_audio', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        segments: processedSegments.map(seg => ({
+                            file_id: seg.file_id,
+                            filename: seg.filename
+                        })),
+                        enable_asr_optimization: enableASROptimization,
+                        asr_optimization_params: asrOptimizationParams
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('音频拼接失败');
+                }
+
+                const result = await response.json();
+                if (result.success) {
+                    // 构建完整的URL
+                    const fullUrl = window.location.origin + result.spliced_file_url;
+                    splicedAudioUrl = fullUrl;
+                    splicedAudioFilename = result.spliced_filename;
+                    document.getElementById('spliceProgressText').textContent = '拼接完成！';
+                    document.getElementById('downloadSpliceBtn').disabled = false;
+                    
+                    // 显示预览
+                    const previewContainer = document.getElementById('splicePreview');
                      const audioPlayer = document.getElementById('spliceAudioPlayer');
                      audioPlayer.src = fullUrl;
                      previewContainer.style.display = 'block';
@@ -1797,15 +2180,22 @@
          }
 
          // 清空拼接列表
-         function clearSpliceList() {
-             spliceSegments = [];
-             splicedAudioUrl = null;
-             splicedAudioFilename = null;
-             updateSpliceList();
-             updateSpliceButtons();
-             document.getElementById('splicePreview').style.display = 'none';
-             document.getElementById('downloadSpliceBtn').disabled = true;
-         }
+        function clearSpliceList() {
+            // 清理所有本地文件的URL对象
+            spliceSegments.forEach(segment => {
+                if (segment.type === 'local' && segment.file_url) {
+                    URL.revokeObjectURL(segment.file_url);
+                }
+            });
+            
+            spliceSegments = [];
+            splicedAudioUrl = null;
+            splicedAudioFilename = null;
+            updateSpliceList();
+            updateSpliceButtons();
+            document.getElementById('splicePreview').style.display = 'none';
+            document.getElementById('downloadSpliceBtn').disabled = true;
+        }
 
          // 格式化时长显示
          function formatDuration(seconds) {
@@ -1814,6 +2204,230 @@
              const remainingSeconds = Math.floor(seconds % 60);
              return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
          }
+
+         // ASR优化模态框控制函数
+         function openAsrModal() {
+             const modal = document.getElementById('asrOptimizationModal');
+             modal.classList.add('show');
+             modal.style.display = 'flex';
+         }
+
+         function closeAsrModal() {
+             const modal = document.getElementById('asrOptimizationModal');
+             modal.classList.remove('show');
+             setTimeout(() => {
+                 modal.style.display = 'none';
+             }, 300);
+         }
+
+         function applyAsrSettings() {
+             // 获取所有设置值
+             const settings = {
+                 normalizeAudio: document.getElementById('normalizeAudio').checked,
+                 removeSilence: document.getElementById('removeSilence').checked,
+                 enhanceVolume: document.getElementById('enhanceVolume').checked,
+                 compressAudio: document.getElementById('compressAudio').checked,
+                 targetSampleRate: document.getElementById('targetSampleRate').value
+             };
+
+             // 更新主页面的ASR优化checkbox状态
+             const enableASROptimization = document.getElementById('enableASROptimization');
+             const hasAnyOptimization = settings.normalizeAudio || settings.removeSilence || 
+                                      settings.enhanceVolume || settings.compressAudio;
+             enableASROptimization.checked = hasAnyOptimization;
+
+             // 保存设置到全局变量或localStorage
+             window.asrSettings = settings;
+             localStorage.setItem('asrSettings', JSON.stringify(settings));
+
+             closeAsrModal();
+             
+             // 显示应用成功提示
+             const helpText = document.querySelector('#asrOptimizationTrigger + .help-text');
+             const originalText = helpText.textContent;
+             helpText.textContent = '✓ 设置已应用';
+             helpText.style.color = '#28a745';
+             setTimeout(() => {
+                 helpText.textContent = originalText;
+                 helpText.style.color = '';
+             }, 2000);
+         }
+
+         // 页面加载时初始化
+         document.addEventListener('DOMContentLoaded', function() {
+             // 为ASR优化触发器添加点击事件
+             document.getElementById('asrOptimizationTrigger').addEventListener('click', function(e) {
+                 e.preventDefault();
+                 openAsrModal();
+             });
+
+             // 为拼接音频ASR优化触发器添加点击事件
+             const spliceAsrTrigger = document.getElementById('spliceAsrOptimizationTrigger');
+             if (spliceAsrTrigger) {
+                 spliceAsrTrigger.addEventListener('click', function(e) {
+                     e.preventDefault();
+                     e.stopPropagation();
+                     openSpliceAsrModal();
+                 });
+             }
+
+             // 点击模态框背景关闭
+             document.getElementById('asrOptimizationModal').addEventListener('click', function(e) {
+                 if (e.target === this) {
+                     closeAsrModal();
+                 }
+             });
+
+             // 点击拼接音频ASR优化模态框背景关闭
+             document.getElementById('spliceAsrOptimizationModal').addEventListener('click', function(e) {
+                 if (e.target === this) {
+                     closeSpliceAsrModal();
+                 }
+             });
+
+             // 加载保存的设置
+             const savedSettings = localStorage.getItem('asrSettings');
+             if (savedSettings) {
+                 const settings = JSON.parse(savedSettings);
+                 document.getElementById('normalizeAudio').checked = settings.normalizeAudio;
+                 document.getElementById('removeSilence').checked = settings.removeSilence;
+                 document.getElementById('enhanceVolume').checked = settings.enhanceVolume;
+                 document.getElementById('compressAudio').checked = settings.compressAudio;
+                 document.getElementById('targetSampleRate').value = settings.targetSampleRate;
+                 
+                 // 更新主页面checkbox状态
+                 const hasAnyOptimization = settings.normalizeAudio || settings.removeSilence || 
+                                          settings.enhanceVolume || settings.compressAudio;
+                 document.getElementById('enableASROptimization').checked = hasAnyOptimization;
+             }
+
+             // 加载拼接音频ASR优化保存的设置
+             const savedSpliceSettings = localStorage.getItem('spliceAsrSettings');
+             if (savedSpliceSettings) {
+                 const settings = JSON.parse(savedSpliceSettings);
+                 document.getElementById('spliceNormalizeAudio').checked = settings.normalizeAudio;
+                 document.getElementById('spliceRemoveSilence').checked = settings.removeSilence;
+                 document.getElementById('spliceEnhanceVolume').checked = settings.enhanceVolume;
+                 document.getElementById('spliceCompressAudio').checked = settings.compressAudio;
+                 document.getElementById('spliceTargetSampleRate').value = settings.targetSampleRate;
+                 
+                 // 更新主页面checkbox状态
+                 const hasAnyOptimization = settings.normalizeAudio || settings.removeSilence || 
+                                          settings.enhanceVolume || settings.compressAudio;
+                 document.getElementById('enableSpliceASROptimization').checked = hasAnyOptimization;
+             }
+         });
      </script>
+
+     <!-- ASR优化设置模态框 -->
+     <div id="asrOptimizationModal" class="modal">
+         <div class="modal-content">
+             <div class="modal-header">
+                 <h3>🎯 ASR优化设置</h3>
+                 <span class="modal-close" onclick="closeAsrModal()">&times;</span>
+             </div>
+             <div class="modal-body">
+                 <div class="optimization-options">
+                     <div class="option-row">
+                         <label>
+                             <input type="checkbox" id="normalizeAudio">
+                             音频标准化
+                         </label>
+                         <span class="option-desc">增强音量，提高信噪比</span>
+                     </div>
+                     <div class="option-row">
+                         <label>
+                             <input type="checkbox" id="removeSilence">
+                             去除静音段
+                         </label>
+                         <span class="option-desc">移除长时间静音，提高处理效率</span>
+                     </div>
+                     <div class="option-row">
+                         <label>
+                             <input type="checkbox" id="enhanceVolume">
+                             音量增强
+                         </label>
+                         <span class="option-desc">自动调整音量到最佳水平</span>
+                     </div>
+                     <div class="option-row">
+                         <label>
+                             <input type="checkbox" id="compressAudio">
+                             动态范围压缩
+                         </label>
+                         <span class="option-desc">平衡音量差异，改善识别效果</span>
+                     </div>
+                     <div class="option-row">
+                         <label>目标采样率:</label>
+                         <select id="targetSampleRate">
+                             <option value="16000">16kHz (标准)</option>
+                             <option value="24000" selected>24kHz (推荐)</option>
+                             <option value="48000">48kHz (高质量)</option>
+                         </select>
+                         <span class="option-desc">24kHz为ASR最佳采样率</span>
+                     </div>
+                 </div>
+             </div>
+             <div class="modal-footer">
+                 <button class="btn btn-success" onclick="applyAsrSettings()">应用设置</button>
+                 <button class="btn" onclick="closeAsrModal()">取消</button>
+             </div>
+         </div>
+     </div>
+
+     <!-- 拼接音频ASR优化设置模态框 -->
+     <div id="spliceAsrOptimizationModal" class="modal">
+         <div class="modal-content">
+             <div class="modal-header">
+                 <h3>🎯 拼接音频ASR优化设置</h3>
+                 <span class="modal-close" onclick="closeSpliceAsrModal()">&times;</span>
+             </div>
+             <div class="modal-body">
+                 <div class="optimization-options">
+                     <div class="option-row">
+                         <label>
+                             <input type="checkbox" id="spliceNormalizeAudio">
+                             音频标准化
+                         </label>
+                         <span class="option-desc">增强音量，提高信噪比</span>
+                     </div>
+                     <div class="option-row">
+                         <label>
+                             <input type="checkbox" id="spliceRemoveSilence">
+                             去除静音段
+                         </label>
+                         <span class="option-desc">移除长时间静音，提高处理效率</span>
+                     </div>
+                     <div class="option-row">
+                         <label>
+                             <input type="checkbox" id="spliceEnhanceVolume">
+                             音量增强
+                         </label>
+                         <span class="option-desc">自动调整音量到最佳水平</span>
+                     </div>
+                     <div class="option-row">
+                         <label>
+                             <input type="checkbox" id="spliceCompressAudio">
+                             动态范围压缩
+                         </label>
+                         <span class="option-desc">平衡音量差异，改善识别效果</span>
+                     </div>
+                     <div class="option-row">
+                         <label>目标采样率:</label>
+                         <select id="spliceTargetSampleRate">
+                             <option value="16000">16kHz (标准)</option>
+                             <option value="24000" selected>24kHz (推荐)</option>
+                             <option value="48000">48kHz (高质量)</option>
+                         </select>
+                         <span class="option-desc">24kHz为ASR最佳采样率</span>
+                     </div>
+                 </div>
+             </div>
+             <div class="modal-footer">
+                 <button class="btn btn-success" onclick="applySpliceAsrSettings()">应用设置</button>
+                 <button class="btn" onclick="closeSpliceAsrModal()">取消</button>
+             </div>
+         </div>
+     </div>
+
  </body>
  </html>

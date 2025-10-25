@@ -406,6 +406,76 @@ def splice_audio():
         if combined_audio is None:
             return jsonify({'error': '没有成功加载任何音频片段'}), 500
         
+        # 获取ASR优化参数
+        enable_asr_optimization = data.get('enable_asr_optimization', False)
+        asr_optimization_params = data.get('asr_optimization_params', {})
+        
+        # 如果启用ASR优化，对拼接后的音频进行优化处理
+        if enable_asr_optimization and asr_optimization_params:
+            logging.info("Applying ASR optimization to spliced audio...")
+            
+            # 获取优化参数，设置默认值
+            normalize_audio = asr_optimization_params.get('normalize_audio', False)
+            remove_silence = asr_optimization_params.get('remove_silence', False)
+            enhance_volume = asr_optimization_params.get('enhance_volume', False)
+            compress_audio = asr_optimization_params.get('compress_audio', False)
+            target_sample_rate = asr_optimization_params.get('target_sample_rate', 24000)
+            
+            try:
+                # 1. 转换为单声道
+                if combined_audio.channels > 1:
+                    combined_audio = combined_audio.set_channels(1)
+                    logging.info("Converted to mono channel")
+                
+                # 2. 调整采样率
+                if combined_audio.frame_rate != target_sample_rate:
+                    combined_audio = combined_audio.set_frame_rate(target_sample_rate)
+                    logging.info(f"Adjusted sample rate to {target_sample_rate}Hz")
+                
+                # 3. 音频标准化
+                if normalize_audio:
+                    combined_audio = combined_audio.normalize()
+                    logging.info("Applied audio normalization")
+                
+                # 4. 音量增强（如果RMS较低）
+                if enhance_volume:
+                    rms = combined_audio.rms
+                    if rms < 1000:  # 如果音量较低
+                        gain = 20.0 * math.log10(3000.0 / rms)  # 计算增益
+                        gain = min(gain, 20)  # 限制最大增益为20dB
+                        combined_audio = combined_audio + gain
+                        logging.info(f"Applied volume enhancement: +{gain:.1f}dB")
+                
+                # 5. 动态范围压缩
+                if compress_audio:
+                    combined_audio = combined_audio.compress_dynamic_range(
+                        threshold=-20.0,
+                        ratio=4.0,
+                        attack=5.0,
+                        release=50.0
+                    )
+                    logging.info("Applied dynamic range compression")
+                
+                # 6. 去除静音段
+                if remove_silence:
+                    # 检测并移除静音段
+                    chunks = silence.split_on_silence(
+                        combined_audio,
+                        min_silence_len=1000,  # 最小静音长度1秒
+                        silence_thresh=combined_audio.dBFS - 16,  # 静音阈值
+                        keep_silence=200  # 保留200ms静音
+                    )
+                    if chunks:
+                        combined_audio = sum(chunks)
+                        logging.info("Removed silence segments")
+                
+                logging.info("ASR optimization completed successfully")
+                
+            except Exception as e:
+                logging.error(f"ASR optimization failed: {e}")
+                # 如果优化失败，继续使用原始拼接的音频
+                pass
+        
         # 生成拼接后的文件名
         spliced_filename = f"spliced_audio_{uuid.uuid4().hex[:8]}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.mp3"
         spliced_path = os.path.join(TEMP_DIR, spliced_filename)
@@ -422,6 +492,11 @@ def splice_audio():
                     f"total_duration: {total_duration}s, "
                     f"file_size: {spliced_size} bytes")
         
+        # 构建响应消息
+        message = f'成功拼接{len(segments)}个音频片段'
+        if enable_asr_optimization:
+            message += '，并应用了ASR优化处理'
+        
         return jsonify({
             'success': True,
             'spliced_filename': spliced_filename,
@@ -429,7 +504,8 @@ def splice_audio():
             'total_duration': total_duration,
             'file_size': spliced_size,
             'segments_count': len(segments),
-            'message': f'成功拼接{len(segments)}个音频片段'
+            'asr_optimized': enable_asr_optimization,
+            'message': message
         })
         
     except Exception as e:

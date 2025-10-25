@@ -618,6 +618,17 @@ class AccessibilityManager {
     }
     
     /**
+     * 公告模态框关闭
+     * @param {string} modalTitle - 模态框标题
+     */
+    announceModalClose(modalTitle) {
+        this.announce(`已关闭${modalTitle}对话框`);
+        
+        // 恢复焦点到触发元素
+        this.restoreFocus();
+    }
+    
+    /**
      * 设置模态框焦点陷阱
      * @param {Element} modal - 模态框元素
      */
