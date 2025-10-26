@@ -220,7 +220,7 @@ def generate_recommendations(result1, result2, file1_name, file2_name):
 
 if __name__ == "__main__":
     # 分析两个MP3文件
-    file1 = r"d:\code\work_UI\广州珠海政务调研播客_01.mp3"
+    file1 = r"d:\code\work_UI\my_voice_optimized.mp3"
     file2 = r"d:\code\work_UI\my_voice.mp3"
     
     result1, result2 = compare_audio_files(file1, file2)

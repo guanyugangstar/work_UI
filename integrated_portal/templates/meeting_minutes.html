@@ -744,7 +744,6 @@
 
         /* 模态框样式 */
         .modal {
-            display: none;
             position: fixed;
             z-index: 1000;
             left: 0;
@@ -752,13 +751,22 @@
             width: 100%;
             height: 100%;
             background-color: rgba(0, 0, 0, 0.5);
-            animation: fadeIn 0.3s ease-out;
-        }
-
-        .modal.show {
             display: flex;
             align-items: center;
             justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-out, visibility 0.3s ease-out;
+        }
+
+        .modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal.hide {
+            opacity: 0;
+            visibility: hidden;
         }
 
         .modal-content {
@@ -853,9 +861,10 @@
 
          function closeSpliceAsrModal() {
              const modal = document.getElementById('spliceAsrOptimizationModal');
+             modal.classList.add('hide');
              modal.classList.remove('show');
              setTimeout(() => {
-                 modal.style.display = 'none';
+                 modal.classList.remove('hide');
              }, 300);
          }
 
@@ -1363,21 +1372,26 @@
             }
 
             try {
-                // 获取优化参数
-                const targetSampleRate = parseInt(document.getElementById('targetSampleRate').value);
-                const enableNormalization = document.getElementById('normalizeAudio').checked;
-                const enableSilenceRemoval = document.getElementById('removeSilence').checked;
-                const enableVolumeEnhancement = document.getElementById('enhanceVolume').checked;
-                const enableDynamicCompression = document.getElementById('compressAudio').checked;
+                // 检查是否启用ASR优化
+                const enableASROptimization = document.getElementById('enableASROptimization').checked;
+                
+                // 获取优化参数 - 使用统一的ASR设置
+                let asrOptimizationParams = {};
+                if (enableASROptimization && window.asrSettings) {
+                    asrOptimizationParams = {
+                        normalize_audio: window.asrSettings.normalizeAudio,
+                        remove_silence: window.asrSettings.removeSilence,
+                        enhance_volume: window.asrSettings.enhanceVolume,
+                        compress_audio: window.asrSettings.compressAudio,
+                        target_sample_rate: parseInt(window.asrSettings.targetSampleRate)
+                    };
+                }
 
                 // 创建FormData
                 const formData = new FormData();
                 formData.append('audio_file', uploadedFile);
-                formData.append('target_sample_rate', targetSampleRate);
-                formData.append('enable_normalization', enableNormalization);
-                formData.append('enable_silence_removal', enableSilenceRemoval);
-                formData.append('enable_volume_enhancement', enableVolumeEnhancement);
-                formData.append('enable_dynamic_compression', enableDynamicCompression);
+                formData.append('enable_asr_optimization', enableASROptimization);
+                formData.append('asr_optimization_params', JSON.stringify(asrOptimizationParams));
 
                 const response = await fetch('/meeting_minutes/optimize_audio', {
                     method: 'POST',
@@ -2214,9 +2228,10 @@
 
          function closeAsrModal() {
              const modal = document.getElementById('asrOptimizationModal');
+             modal.classList.add('hide');
              modal.classList.remove('show');
              setTimeout(() => {
-                 modal.style.display = 'none';
+                 modal.classList.remove('hide');
              }, 300);
          }
 
