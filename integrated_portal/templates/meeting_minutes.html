@@ -1865,9 +1865,16 @@
         }
 
         function clearFile() {
-            // 重置文件相关变量
+            // 重置所有文件相关变量
             uploadedFile = null;
             processedAudioUrl = null;
+            isProcessing = false;
+            
+            // 重置音频拼接相关变量
+            spliceSegments = [];
+            splicedAudioUrl = null;
+            splicedAudioFilename = null;
+            splicedAudioDifyId = null;
             
             // 重置上传区域显示
             const uploadArea = document.getElementById('uploadArea');
@@ -1882,9 +1889,37 @@
             
             // 重置文件输入
             document.getElementById('audioFile').value = '';
+            const localAudioInput = document.getElementById('localAudioFiles');
+            if (localAudioInput) {
+                localAudioInput.value = '';
+            }
             
             // 隐藏成功消息
             document.getElementById('uploadSuccess').style.display = 'none';
+            
+            // 重置进度显示
+            const progressText = document.getElementById('progressText');
+            if (progressText) {
+                progressText.textContent = '处理中...';
+                progressText.style.display = 'none';
+            }
+            
+            const spliceProgressText = document.getElementById('spliceProgressText');
+            if (spliceProgressText) {
+                spliceProgressText.textContent = '拼接中...';
+            }
+            
+            const progressContainer = document.getElementById('spliceProgress');
+            if (progressContainer) {
+                progressContainer.style.display = 'none';
+            }
+            
+            // 重置停止按钮
+            const stopBtn = document.getElementById('stopBtn');
+            if (stopBtn) {
+                stopBtn.disabled = true;
+                stopBtn.style.display = 'none';
+            }
             
             // 隐藏ASR优化完成面板
             const optimizationResult = document.getElementById('optimizationResult');
@@ -1893,21 +1928,103 @@
                 optimizationResult.innerHTML = '';
             }
             
+            // 隐藏拼接ASR优化结果面板
+            const spliceOptimizationResult = document.getElementById('spliceOptimizationResult');
+            if (spliceOptimizationResult) {
+                spliceOptimizationResult.style.display = 'none';
+                spliceOptimizationResult.innerHTML = '';
+            }
+            
+            // 重置ASR优化设置
+            const enableASROptimization = document.getElementById('enableASROptimization');
+            if (enableASROptimization) {
+                enableASROptimization.checked = false;
+            }
+            
+            const enableSpliceASROptimization = document.getElementById('enableSpliceASROptimization');
+            if (enableSpliceASROptimization) {
+                enableSpliceASROptimization.checked = false;
+            }
+            
+            // 重置优化选项面板显示
+            const optimizationOptionsPanel = document.getElementById('optimizationOptionsPanel');
+            if (optimizationOptionsPanel) {
+                optimizationOptionsPanel.style.display = 'none';
+            }
+            
             // 禁用相关按钮
             document.getElementById('processBtn').disabled = true;
             document.getElementById('previewBtn').disabled = true;
             document.getElementById('generateBtn').disabled = true;
+            
+            // 重置按钮状态指示器
+            const processBtn = document.getElementById('processBtn');
+            if (processBtn) {
+                const statusIndicator = processBtn.querySelector('.status-indicator');
+                if (statusIndicator) {
+                    statusIndicator.className = 'status-indicator status-ready';
+                }
+            }
             
             // 隐藏音频播放器
             const audioPlayer = document.getElementById('audioPlayer');
             audioPlayer.style.display = 'none';
             audioPlayer.src = '';
             
+            // 隐藏拼接音频播放器
+            const spliceAudioPlayer = document.getElementById('spliceAudioPlayer');
+            if (spliceAudioPlayer) {
+                spliceAudioPlayer.style.display = 'none';
+                spliceAudioPlayer.src = '';
+            }
+            
+            // 清空拼接列表显示
+            const spliceFilesList = document.getElementById('spliceFilesList');
+            if (spliceFilesList) {
+                spliceFilesList.innerHTML = '<div class="empty-message">暂无文件，请先上传音频文件或添加本地文件</div>';
+            }
+            
+            // 隐藏拼接预览
+            const splicePreview = document.getElementById('splicePreview');
+            if (splicePreview) {
+                splicePreview.style.display = 'none';
+            }
+            
+            // 更新拼接按钮状态
+            updateSpliceButtons();
+            
             // 重置会议纪要结果
             document.getElementById('minutesResult').textContent = '文件上传后即可生成会议纪要，无需等待音频处理完成...';
             document.getElementById('downloadBtn').disabled = true;
             
-            console.log('文件已清除');
+            // 重置表单输入
+            const participantCount = document.getElementById('participantCount');
+            if (participantCount) {
+                participantCount.value = '';
+            }
+            
+            const meetingTopic = document.getElementById('meetingTopic');
+            if (meetingTopic) {
+                meetingTopic.value = '';
+            }
+            
+            // 重置音频处理参数
+            const startTime = document.getElementById('startTime');
+            if (startTime) {
+                startTime.value = '';
+            }
+            
+            const endTime = document.getElementById('endTime');
+            if (endTime) {
+                endTime.value = '';
+            }
+            
+            const quality = document.getElementById('quality');
+            if (quality) {
+                quality.value = 'medium';
+            }
+            
+            console.log('所有状态已完全清除，系统已重置到初始状态');
         }
 
         // 音频拼接相关变量和函数
