@@ -1036,6 +1036,9 @@
                                 </label>
                                 <div class="help-text">点击设置ASR优化参数</div>
                             </div>
+                            
+                            <!-- ASR优化结果显示容器 -->
+                            <div id="optimizationResult" style="display: none; margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #28a745;"></div>
                         </div>
 
                         <div class="progress-container" id="processProgress" style="display: none;">
@@ -1051,6 +1054,7 @@
                             <button class="btn btn-success" onclick="processAudio()" id="processBtn" disabled>
                                 <span class="status-indicator status-ready"></span>处理音频
                             </button>
+                            <button class="btn btn-danger" onclick="stopProcessing()" id="stopBtn" disabled style="display: none;">停止</button>
                             <button class="btn" onclick="previewAudio()" id="previewBtn" disabled>预览</button>
                             <button class="btn btn-warning" onclick="clearFile()">清除</button>
                         </div>
@@ -1133,7 +1137,7 @@
                         <div class="minutes-form">
                             <div class="form-group">
                                 <label>参与人数:</label>
-                                <input type="number" id="participantCount" placeholder="请输入参与人数" min="1" max="50" value="5">
+                                <input type="number" id="participantCount" placeholder="请输入参与人数" min="1" max="50" value="2">
                             </div>
                             <div class="form-group">
                                 <label>会议主题:</label>
@@ -1312,61 +1316,10 @@
             }
         }
 
-        // 处理上传的文件（实际上传到服务器）
-        async function processUploadedFile() {
-            if (!uploadedFile) {
-                alert('请先选择音频文件！');
-                return;
-            }
-
-            const resultArea = document.getElementById('minutesResult');
-            const originalText = resultArea.textContent;
-            resultArea.textContent = '正在上传文件到服务器...';
-
-            try {
-                // 检查是否启用ASR优化
-                const enableOptimization = document.getElementById('enableASROptimization').checked;
-                
-                if (enableOptimization) {
-                    resultArea.textContent = '正在进行ASR优化预处理...';
-                    await optimizeAudioForASR();
-                    resultArea.textContent = 'ASR优化完成，正在上传文件到服务器...';
-                }
-
-                const formData = new FormData();
-                formData.append('audio_file', uploadedFile);
-                
-                const response = await fetch('/meeting_minutes/upload_audio', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (!response.ok) {
-                    throw new Error('文件上传失败');
-                }
-
-                const data = await response.json();
-                if (!data.success) {
-                    throw new Error(data.error || '文件上传失败');
-                }
-
-                resultArea.textContent = '文件上传成功！可以开始生成会议纪要或处理音频。';
-                document.getElementById('processBtn').disabled = false; // 启用音频处理按钮
-                
-                // 存储服务器返回的文件ID，供后续使用
-                uploadedFile.dify_file_id = data.dify_file_id;
-                uploadedFile.original_file_id = data.dify_file_id; // 直接使用dify_file_id作为原始文件ID
-                
-                console.log('文件上传成功，文件ID:', data.dify_file_id);
-                
-            } catch (error) {
-                console.error('文件上传失败:', error);
-                resultArea.textContent = '文件上传失败: ' + error.message;
-            }
-        }
-
         // ASR优化预处理函数
         async function optimizeAudioForASR() {
+            console.log('optimizeAudioForASR 函数被调用');
+            
             if (!uploadedFile) {
                 throw new Error('没有可优化的音频文件');
             }
@@ -1374,6 +1327,7 @@
             try {
                 // 检查是否启用ASR优化
                 const enableASROptimization = document.getElementById('enableASROptimization').checked;
+                console.log('ASR优化开关状态 (在optimizeAudioForASR中):', enableASROptimization);
                 
                 // 获取优化参数 - 使用统一的ASR设置
                 let asrOptimizationParams = {};
@@ -1408,6 +1362,7 @@
                 }
 
                 // 显示优化结果
+                console.log('准备显示优化结果:', result);
                 displayOptimizationResult(result);
 
                 // 创建优化后的文件对象
@@ -1425,10 +1380,22 @@
             }
         }
 
+        // 显示优化结果（兼容两种调用方式）
+        function displayOptimizationResults(optimizationInfo) {
+            displayOptimizationResult({ optimization_info: optimizationInfo });
+        }
+        
         // 显示优化结果
         function displayOptimizationResult(result) {
+            console.log('displayOptimizationResult 函数被调用，参数:', result);
+            
             const resultDiv = document.getElementById('optimizationResult');
-            if (!resultDiv) return;
+            console.log('optimizationResult 元素:', resultDiv);
+            
+            if (!resultDiv) {
+                console.error('找不到 optimizationResult 元素');
+                return;
+            }
 
             const improvements = result.improvements || {};
             
@@ -1496,6 +1463,8 @@
 
         // 音频处理相关
         async function processAudio() {
+            console.log('processAudio 函数被调用');
+            
             if (!uploadedFile) {
                 alert('请先上传音频文件！');
                 return;
@@ -1509,18 +1478,25 @@
 
             isProcessing = true;
             document.getElementById('processBtn').disabled = true;
-            document.getElementById('stopBtn').disabled = false;
+            const stopBtn = document.getElementById('stopBtn');
+            if (stopBtn) {
+                stopBtn.disabled = false;
+                stopBtn.style.display = 'inline-block';
+            }
             document.getElementById('processProgress').style.display = 'block';
             document.getElementById('progressText').textContent = '正在处理音频...';
 
             try {
+                // 第一步：先进行音频剪辑
+                document.getElementById('progressText').textContent = '正在剪辑音频文件...';
+                
                 // 获取处理参数
                 const startTime = parseFloat(document.getElementById('startTime').value) || 0;
                 const endTime = parseFloat(document.getElementById('endTime').value) || null;
                 const quality = document.getElementById('quality').value;
                 const compress = quality !== 'high'; // 高质量不压缩，中等和低质量压缩
 
-                // 调用后端音频处理API
+                // 调用后端音频处理API进行剪辑
                 const response = await fetch('/meeting_minutes/process_audio', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1533,23 +1509,77 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error('音频处理失败');
+                    throw new Error('音频剪辑失败');
                 }
 
                 const result = await response.json();
                 if (!result.success) {
-                    throw new Error(result.error || '音频处理失败');
+                    throw new Error(result.error || '音频剪辑失败');
                 }
 
-                // 处理成功，上传处理后的文件到Dify
-                document.getElementById('progressText').textContent = '正在上传处理后的音频...';
+                // 保存剪辑后的文件信息
+                let finalProcessedFileId = result.processed_file_id;
+                let finalProcessedFilename = result.processed_filename;
+                let finalProcessedFileUrl = result.processed_file_url;
+
+                // 第二步：对剪辑后的文件进行ASR优化（如果启用）
+                const enableOptimization = document.getElementById('enableASROptimization').checked;
+                console.log('ASR优化开关状态:', enableOptimization);
                 
+                if (enableOptimization) {
+                    console.log('开始对剪辑后的文件进行ASR优化...');
+                    document.getElementById('progressText').textContent = '正在对剪辑后的文件进行ASR优化...';
+                    
+                    try {
+                        // 获取剪辑后的文件并创建临时文件对象
+                        const clippedFileResponse = await fetch(finalProcessedFileUrl);
+                        const clippedFileBlob = await clippedFileResponse.blob();
+                        const tempClippedFile = new File([clippedFileBlob], finalProcessedFilename, { type: 'audio/mpeg' });
+                        
+                        // 临时保存原始文件
+                        const originalUploadedFile = uploadedFile;
+                        
+                        // 将剪辑后的文件设置为当前文件，以便optimizeAudioForASR处理
+                        uploadedFile = tempClippedFile;
+                        
+                        // 调用现有的ASR优化函数
+                        await optimizeAudioForASR();
+                        
+                        // 获取优化后的文件信息
+                        // optimizeAudioForASR已经更新了uploadedFile为优化后的文件
+                        const optimizedFileBlob = uploadedFile;
+                        
+                        // 创建优化后文件的临时URL（用于后续上传）
+                        finalProcessedFileUrl = URL.createObjectURL(optimizedFileBlob);
+                        finalProcessedFilename = uploadedFile.name;
+                        
+                        // 恢复原始文件引用
+                        uploadedFile = originalUploadedFile;
+                        
+                        console.log('ASR优化完成');
+                        document.getElementById('progressText').textContent = 'ASR优化完成，正在上传最终文件...';
+                        
+                    } catch (optimizationError) {
+                        console.error('ASR优化失败:', optimizationError);
+                        document.getElementById('progressText').textContent = 'ASR优化失败，使用剪辑后的文件...';
+                        // 继续处理，不中断整个流程
+                    }
+                }
+
+                // 第三步：上传最终处理后的文件到Dify
+                document.getElementById('progressText').textContent = '正在上传处理后的文件到Dify...';
+                
+                // 获取最终处理后的文件
+                const finalFileResponse = await fetch(finalProcessedFileUrl);
+                const finalFileBlob = await finalFileResponse.blob();
+                
+                // 创建FormData上传到Dify
+                const uploadFormData = new FormData();
+                uploadFormData.append('audio_file', finalFileBlob, finalProcessedFilename);
+
                 const uploadResponse = await fetch('/meeting_minutes/upload_processed_audio', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        processed_file_id: result.processed_file_id
-                    })
+                    body: uploadFormData
                 });
 
                 if (!uploadResponse.ok) {
@@ -1562,12 +1592,13 @@
                 }
 
                 // 保存处理后的文件信息
-                uploadedFile.processed_file_id = result.processed_file_id; // 使用本地处理结果的ID
-                uploadedFile.processed_filename = result.processed_filename;
-                uploadedFile.processed_file_url = result.processed_file_url; // 保存处理后音频文件的URL
+                uploadedFile.processed_file_id = finalProcessedFileId; // 使用本地处理结果的ID
+                uploadedFile.processed_filename = finalProcessedFilename;
+                uploadedFile.processed_file_url = finalProcessedFileUrl; // 保存处理后音频文件的URL
                 uploadedFile.duration = result.duration; // 保存音频时长
                 uploadedFile.dify_processed_file_id = uploadResult.dify_file_id; // 保存Dify上传后的ID
                 
+                console.log('处理完成，最终Dify文件ID:', uploadResult.dify_file_id);
                 finishProcessing();
                 
             } catch (error) {
@@ -1581,7 +1612,11 @@
         function finishProcessing() {
             isProcessing = false;
             document.getElementById('processBtn').disabled = false;
-            document.getElementById('stopBtn').disabled = true;
+            const stopBtn = document.getElementById('stopBtn');
+            if (stopBtn) {
+                stopBtn.disabled = true;
+                stopBtn.style.display = 'none';
+            }
             document.getElementById('previewBtn').disabled = false;
             document.getElementById('generateBtn').disabled = false;
             document.getElementById('progressText').textContent = '处理完成！';
@@ -1614,7 +1649,11 @@
         function stopProcessing() {
             isProcessing = false;
             document.getElementById('processBtn').disabled = false;
-            document.getElementById('stopBtn').disabled = true;
+            const stopBtn = document.getElementById('stopBtn');
+            if (stopBtn) {
+                stopBtn.disabled = true;
+                stopBtn.style.display = 'none';
+            }
             document.getElementById('processProgress').style.display = 'none';
         }
 
@@ -1632,6 +1671,17 @@
                 alert('请输入参与人数！');
                 return;
             }
+
+            // 调试信息：输出所有可用的文件ID
+            console.log('=== 生成会议纪要 - 文件ID调试信息 ===');
+            console.log('uploadedFile对象:', uploadedFile);
+            if (uploadedFile) {
+                console.log('原始文件ID (dify_file_id):', uploadedFile.dify_file_id);
+                console.log('处理后文件ID (dify_processed_file_id):', uploadedFile.dify_processed_file_id);
+                console.log('原始文件ID备份 (original_file_id):', uploadedFile.original_file_id);
+            }
+            console.log('拼接音频URL:', splicedAudioUrl);
+            console.log('拼接音频文件名:', splicedAudioFilename);
 
             document.getElementById('generateBtn').disabled = true;
             const resultArea = document.getElementById('minutesResult');
@@ -2031,45 +2081,6 @@
             document.getElementById('spliceProgressText').textContent = '正在准备拼接...';
 
             try {
-                // 检查是否有本地文件需要先上传
-                const localFiles = spliceSegments.filter(seg => seg.type === 'local');
-                const processedSegments = [...spliceSegments];
-
-                if (localFiles.length > 0) {
-                    document.getElementById('spliceProgressText').textContent = `正在上传本地文件 (0/${localFiles.length})...`;
-                    
-                    // 逐个上传本地文件
-                    for (let i = 0; i < localFiles.length; i++) {
-                        const localFile = localFiles[i];
-                        document.getElementById('spliceProgressText').textContent = `正在上传本地文件 (${i + 1}/${localFiles.length})...`;
-                        
-                        // 创建FormData上传文件
-                        const formData = new FormData();
-                        formData.append('audio_file', localFile.file_object);
-                        
-                        const uploadResponse = await fetch('/meeting_minutes/upload_audio', {
-                            method: 'POST',
-                            body: formData
-                        });
-                        
-                        if (!uploadResponse.ok) {
-                            throw new Error(`上传文件 "${localFile.filename}" 失败`);
-                        }
-                        
-                        const uploadResult = await uploadResponse.json();
-                        if (!uploadResult.success) {
-                            throw new Error(`上传文件 "${localFile.filename}" 失败: ${uploadResult.error || '未知错误'}`);
-                        }
-                        
-                        // 更新segment信息，使用上传后的file_id
-                        const segmentIndex = processedSegments.findIndex(seg => seg.file_id === localFile.file_id);
-                        if (segmentIndex !== -1) {
-                            processedSegments[segmentIndex].file_id = uploadResult.dify_file_id;
-                            processedSegments[segmentIndex].type = 'uploaded'; // 标记为已上传
-                        }
-                    }
-                }
-
                 document.getElementById('spliceProgressText').textContent = '正在拼接音频...';
 
                 // 执行拼接
@@ -2091,7 +2102,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        segments: processedSegments.map(seg => ({
+                        segments: spliceSegments.map(seg => ({
                             file_id: seg.file_id,
                             filename: seg.filename
                         })),

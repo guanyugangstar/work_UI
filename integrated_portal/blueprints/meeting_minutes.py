@@ -225,23 +225,15 @@ def process_audio():
 def upload_processed_audio():
     """将处理后的音频文件上传到Dify"""
     try:
-        data = request.get_json()
-        processed_file_id = data.get('processed_file_id')
-        
-        if not processed_file_id:
-            return jsonify({'error': '缺少处理后的文件ID'}), 400
-        
-        # 查找处理后的文件
-        processed_files = [f for f in os.listdir(TEMP_DIR) if f.startswith(processed_file_id)]
-        if not processed_files:
-            return jsonify({'error': '找不到处理后的文件'}), 404
-        
-        processed_file_path = os.path.join(TEMP_DIR, processed_files[0])
-        
-        # 上传到Dify
-        with open(processed_file_path, 'rb') as f:
+        # 优先处理FormData方式（前端processAudio使用的方式）
+        if 'audio_file' in request.files:
+            audio_file = request.files['audio_file']
+            if audio_file.filename == '':
+                return jsonify({'error': '未选择文件'}), 400
+            
+            # 这是经过剪辑和ASR优化后的最终文件，直接上传到Dify
             files = {
-                'file': (processed_files[0], f, 'audio/mpeg')
+                'file': (audio_file.filename, audio_file.stream, audio_file.content_type or 'audio/mpeg')
             }
             
             headers = {
@@ -260,7 +252,7 @@ def upload_processed_audio():
                 return jsonify({
                     'success': True,
                     'dify_file_id': result.get('id'),
-                    'filename': processed_files[0],
+                    'filename': audio_file.filename,
                     'message': '处理后的音频文件上传成功'
                 })
             else:
@@ -268,6 +260,54 @@ def upload_processed_audio():
                     'success': False,
                     'error': f'Dify上传失败: {response.text}'
                 }), response.status_code
+        
+        # 兼容旧的JSON方式（通过processed_file_id）
+        data = request.get_json()
+        if data:
+            processed_file_id = data.get('processed_file_id')
+            
+            if not processed_file_id:
+                return jsonify({'error': '缺少处理后的文件ID'}), 400
+            
+            # 查找处理后的文件
+            processed_files = [f for f in os.listdir(TEMP_DIR) if f.startswith(processed_file_id)]
+            if not processed_files:
+                return jsonify({'error': '找不到处理后的文件'}), 404
+            
+            processed_file_path = os.path.join(TEMP_DIR, processed_files[0])
+            
+            # 上传到Dify
+            with open(processed_file_path, 'rb') as f:
+                files = {
+                    'file': (processed_files[0], f, 'audio/mpeg')
+                }
+                
+                headers = {
+                    'Authorization': f'Bearer {DIFY_API_TOKEN}'
+                }
+                
+                response = requests.post(
+                    f'{DIFY_API_BASE_URL}/files/upload',
+                    files=files,
+                    headers=headers,
+                    timeout=300
+                )
+                
+                if response.status_code == 201:
+                    result = response.json()
+                    return jsonify({
+                        'success': True,
+                        'dify_file_id': result.get('id'),
+                        'filename': processed_files[0],
+                        'message': '处理后的音频文件上传成功'
+                    })
+                else:
+                    return jsonify({
+                        'success': False,
+                        'error': f'Dify上传失败: {response.text}'
+                    }), response.status_code
+        
+        return jsonify({'error': '缺少音频文件或文件ID'}), 400
                 
     except Exception as e:
         logging.error(f"Processed audio upload error: {e}")
