@@ -1891,67 +1891,127 @@
         let splicedAudioFilename = null;
 
         // 处理本地音频文件选择
-        function handleLocalAudioFiles(event) {
+        async function handleLocalAudioFiles(event) {
             const files = event.target.files;
             if (!files || files.length === 0) {
                 return;
             }
 
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
+            // 显示上传进度
+            const progressText = document.getElementById('spliceProgressText') || createProgressElement();
+            const progressContainer = document.getElementById('spliceProgress') || createProgressContainer();
+            
+            progressContainer.style.display = 'block';
+            progressText.textContent = '正在上传本地音频文件...';
+
+            try {
+                // 创建FormData上传文件
+                const formData = new FormData();
+                const validFiles = [];
                 
-                // 验证文件类型
-                if (!file.type.startsWith('audio/')) {
-                    alert(`文件 "${file.name}" 不是有效的音频文件！`);
-                    continue;
-                }
-
-                // 验证文件大小（限制为50MB）
-                const maxSize = 50 * 1024 * 1024; // 50MB
-                if (file.size > maxSize) {
-                    alert(`文件 "${file.name}" 过大，请选择小于50MB的音频文件！`);
-                    continue;
-                }
-
-                // 检查是否已经添加过这个文件
-                const existingSegment = spliceSegments.find(seg => seg.filename === file.name && seg.type === 'local');
-                if (existingSegment) {
-                    alert(`文件 "${file.name}" 已在拼接列表中！`);
-                    continue;
-                }
-
-                // 创建本地文件对象URL
-                const fileUrl = URL.createObjectURL(file);
-                
-                // 获取音频时长
-                const audio = new Audio();
-                audio.src = fileUrl;
-                audio.addEventListener('loadedmetadata', function() {
-                    const duration = audio.duration;
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
                     
-                    // 添加到拼接列表
+                    // 验证文件类型
+                    if (!file.type.startsWith('audio/')) {
+                        alert(`文件 "${file.name}" 不是有效的音频文件！`);
+                        continue;
+                    }
+
+                    // 验证文件大小（限制为50MB）
+                    const maxSize = 50 * 1024 * 1024; // 50MB
+                    if (file.size > maxSize) {
+                        alert(`文件 "${file.name}" 过大，请选择小于50MB的音频文件！`);
+                        continue;
+                    }
+
+                    // 检查是否已经添加过这个文件
+                    const existingSegment = spliceSegments.find(seg => seg.filename === file.name && seg.type === 'local');
+                    if (existingSegment) {
+                        alert(`文件 "${file.name}" 已在拼接列表中！`);
+                        continue;
+                    }
+                    
+                    formData.append('audio_files', file);
+                    validFiles.push(file);
+                }
+                
+                if (validFiles.length === 0) {
+                    progressContainer.style.display = 'none';
+                    return;
+                }
+                
+                // 上传文件到服务器
+                const response = await fetch('/meeting_minutes/upload_local_audio', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error('本地文件上传失败');
+                }
+                
+                const result = await response.json();
+                if (!result.success) {
+                    throw new Error(result.error || '本地文件上传失败');
+                }
+                
+                // 添加上传成功的文件到拼接列表
+                result.uploaded_files.forEach(uploadedFile => {
                     const segment = {
-                        file_id: `local_${Date.now()}_${i}`, // 生成唯一ID
-                        filename: file.name,
-                        duration: duration,
-                        file_url: fileUrl,
-                        file_object: file, // 保存原始文件对象
+                        file_id: uploadedFile.file_id,
+                        filename: uploadedFile.original_filename,
+                        duration: uploadedFile.audio_info.duration || 0,
+                        file_url: `/meeting_minutes/static/temp/${uploadedFile.server_filename}`,
+                        server_filename: uploadedFile.server_filename,
                         type: 'local' // 标记为本地文件
                     };
 
                     spliceSegments.push(segment);
-                    updateSpliceList();
-                    updateSpliceButtons();
                 });
                 
-                audio.addEventListener('error', function() {
-                    alert(`无法加载音频文件 "${file.name}"，请检查文件是否损坏！`);
-                    URL.revokeObjectURL(fileUrl); // 清理URL对象
-                });
+                updateSpliceList();
+                updateSpliceButtons();
+                
+                progressText.textContent = `成功上传 ${result.uploaded_files.length} 个文件！`;
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                }, 2000);
+                
+            } catch (error) {
+                console.error('本地文件上传失败:', error);
+                progressText.textContent = '上传失败: ' + error.message;
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                }, 3000);
             }
 
             // 清空文件输入框
             event.target.value = '';
+        }
+        
+        // 创建进度显示元素（如果不存在）
+        function createProgressElement() {
+            let progressText = document.getElementById('spliceProgressText');
+            if (!progressText) {
+                progressText = document.createElement('div');
+                progressText.id = 'spliceProgressText';
+                progressText.textContent = '处理中...';
+                document.body.appendChild(progressText);
+            }
+            return progressText;
+        }
+        
+        function createProgressContainer() {
+            let progressContainer = document.getElementById('spliceProgress');
+            if (!progressContainer) {
+                progressContainer = document.createElement('div');
+                progressContainer.id = 'spliceProgress';
+                progressContainer.style.display = 'none';
+                progressContainer.appendChild(createProgressElement());
+                document.body.appendChild(progressContainer);
+            }
+            return progressContainer;
         }
 
         // 添加音频片段到拼接列表
@@ -2123,6 +2183,9 @@
                     splicedAudioFilename = result.spliced_filename;
                     document.getElementById('spliceProgressText').textContent = '拼接完成！';
                     document.getElementById('downloadSpliceBtn').disabled = false;
+                    
+                    // 启用生成会议纪要按钮 - 拼接完成后可以生成纪要
+                    document.getElementById('generateBtn').disabled = false;
                     
                     // 显示预览
                     const previewContainer = document.getElementById('splicePreview');

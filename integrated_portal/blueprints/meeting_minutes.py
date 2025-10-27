@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from flask import Blueprint, render_template, request, jsonify, Response, stream_with_context
+from flask import Blueprint, render_template, request, jsonify, Response, stream_with_context, send_from_directory
 import os
 import requests
 import json
@@ -10,9 +10,10 @@ import logging
 
 # 检查音频处理依赖
 try:
-    from pydub import AudioSegment
+    from pydub import AudioSegment, silence
     from pydub.effects import normalize, compress_dynamic_range
     import numpy as np
+    import math
     AUDIO_PROCESSING_AVAILABLE = True
 except ImportError:
     AUDIO_PROCESSING_AVAILABLE = False
@@ -408,6 +409,76 @@ def cleanup_temp():
         logging.error(f"Cleanup error: {e}")
         return jsonify({'error': f'清理失败: {str(e)}'}), 500
 
+@meeting_minutes_bp.route('/upload_local_audio', methods=['POST'])
+def upload_local_audio():
+    """上传本地音频文件到临时目录"""
+    try:
+        if 'audio_files' not in request.files:
+            return jsonify({'error': '没有选择文件'}), 400
+        
+        files = request.files.getlist('audio_files')
+        if not files:
+            return jsonify({'error': '没有选择文件'}), 400
+        
+        uploaded_files = []
+        
+        for file in files:
+            if file.filename == '':
+                continue
+                
+            # 检查文件格式
+            file_ext = os.path.splitext(file.filename)[1].lower()
+            if file_ext not in SUPPORTED_AUDIO_FORMATS:
+                return jsonify({'error': f'不支持的音频格式: {file.filename}'}), 400
+            
+            # 检查文件大小
+            file.seek(0, 2)
+            file_size = file.tell()
+            file.seek(0)
+            
+            if file_size > MAX_FILE_SIZE:
+                return jsonify({'error': f'文件 {file.filename} 大小超过限制'}), 400
+            
+            # 生成唯一文件名
+            timestamp = int(datetime.now().timestamp() * 1000)
+            unique_filename = f"local_{timestamp}_{file.filename}"
+            file_path = os.path.join(TEMP_DIR, unique_filename)
+            
+            # 保存文件
+            file.save(file_path)
+            
+            # 获取音频信息
+            audio_info = {}
+            if AUDIO_PROCESSING_AVAILABLE:
+                try:
+                    audio = AudioSegment.from_file(file_path)
+                    audio_info = {
+                        'duration': len(audio) / 1000,
+                        'channels': audio.channels,
+                        'frame_rate': audio.frame_rate
+                    }
+                except Exception as e:
+                    logging.warning(f"Failed to get audio info for {file.filename}: {e}")
+            
+            uploaded_files.append({
+                'original_filename': file.filename,
+                'server_filename': unique_filename,
+                'file_id': unique_filename.replace('.', '_').replace('-', '_'),  # 生成安全的file_id
+                'file_size': file_size,
+                'audio_info': audio_info
+            })
+            
+            logging.info(f"Uploaded local file: {file.filename} -> {unique_filename}")
+        
+        return jsonify({
+            'success': True,
+            'uploaded_files': uploaded_files
+        })
+        
+    except Exception as e:
+        logging.error(f"Local file upload error: {e}")
+        return jsonify({'error': f'本地文件上传失败: {str(e)}'}), 500
+
 @meeting_minutes_bp.route('/splice_audio', methods=['POST'])
 def splice_audio():
     """拼接多个音频文件"""
@@ -427,21 +498,57 @@ def splice_audio():
         for i, segment in enumerate(segments):
             file_id = segment.get('file_id')
             filename = segment.get('filename')
+            # 根据file_id前缀判断文件类型
+            segment_type = 'local' if file_id.startswith('local_') else segment.get('type', 'server')
             
             if not file_id:
                 return jsonify({'error': f'第{i+1}个片段缺少文件ID'}), 400
             
-            # 查找音频文件
-            segment_files = []
-            for f in os.listdir(TEMP_DIR):
-                if file_id in f and f.endswith(('.mp3', '.wav', '.m4a', '.aac', '.ogg', '.flac')):
-                    segment_files.append(f)
+            segment_path = None
             
-            if not segment_files:
-                return jsonify({'error': f'找不到音频片段文件: {file_id}'}), 404
-            
-            # 使用第一个匹配的文件
-            segment_path = os.path.join(TEMP_DIR, segment_files[0])
+            # 根据文件类型查找音频文件
+            if segment_type == 'local':
+                # 本地文件：在TEMP_DIR中查找匹配的文件
+                # file_id格式: local_timestamp_filename_extension (下划线替代点号)
+                # 实际文件名格式: local_timestamp_filename.extension
+                segment_path = None
+                
+                # 尝试多种匹配方式
+                for f in os.listdir(TEMP_DIR):
+                    # 方式1: 将file_id中最后一个下划线替换为点号进行精确匹配
+                    if '_' in file_id:
+                        # 找到最后一个下划线的位置
+                        last_underscore = file_id.rfind('_')
+                        if last_underscore > 0:
+                            # 构造可能的文件名：将最后一个下划线替换为点号
+                            possible_filename = file_id[:last_underscore] + '.' + file_id[last_underscore+1:]
+                            if f == possible_filename:
+                                segment_path = os.path.join(TEMP_DIR, f)
+                                break
+                    
+                    # 方式2: 检查文件名是否包含file_id的主要部分（去掉扩展名）
+                    if '_' in file_id:
+                        file_id_without_ext = file_id.rsplit('_', 1)[0]  # 去掉最后的扩展名部分
+                        if file_id_without_ext in f:
+                            segment_path = os.path.join(TEMP_DIR, f)
+                            break
+                
+                if not segment_path:
+                    logging.error(f"Cannot find local audio file: {file_id}")
+                    logging.error(f"Available files in {TEMP_DIR}: {os.listdir(TEMP_DIR)}")
+                    return jsonify({'error': f'找不到本地音频文件: {file_id}'}), 404
+            else:
+                # 服务器文件：按原有逻辑查找
+                segment_files = []
+                for f in os.listdir(TEMP_DIR):
+                    if file_id in f and f.endswith(('.mp3', '.wav', '.m4a', '.aac', '.ogg', '.flac')):
+                        segment_files.append(f)
+                
+                if not segment_files:
+                    return jsonify({'error': f'找不到音频片段文件: {file_id}'}), 404
+                
+                # 使用第一个匹配的文件
+                segment_path = os.path.join(TEMP_DIR, segment_files[0])
             
             try:
                 # 加载音频片段
@@ -453,11 +560,11 @@ def splice_audio():
                 else:
                     combined_audio += audio_segment
                     
-                logging.info(f"Added segment {i+1}: {segment_files[0]}, duration: {len(audio_segment)/1000}s")
+                logging.info(f"Added segment {i+1}: {os.path.basename(segment_path)}, duration: {len(audio_segment)/1000}s")
                 
             except Exception as e:
-                logging.error(f"Failed to load audio segment {segment_files[0]}: {e}")
-                return jsonify({'error': f'加载音频片段失败: {segment_files[0]}'}), 500
+                logging.error(f"Failed to load audio segment {segment_path}: {e}")
+                return jsonify({'error': f'加载音频片段失败: {os.path.basename(segment_path)}'}), 500
         
         if combined_audio is None:
             return jsonify({'error': '没有成功加载任何音频片段'}), 500
