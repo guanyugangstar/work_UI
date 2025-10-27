@@ -1868,6 +1868,13 @@
             // 隐藏成功消息
             document.getElementById('uploadSuccess').style.display = 'none';
             
+            // 隐藏ASR优化完成面板
+            const optimizationResult = document.getElementById('optimizationResult');
+            if (optimizationResult) {
+                optimizationResult.style.display = 'none';
+                optimizationResult.innerHTML = '';
+            }
+            
             // 禁用相关按钮
             document.getElementById('processBtn').disabled = true;
             document.getElementById('previewBtn').disabled = true;
