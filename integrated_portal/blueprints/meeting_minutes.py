@@ -59,6 +59,20 @@ def get_export_bitrate(enable_asr_optimization=False, asr_optimization_params=No
 def serve_temp_file(filename):
     """提供临时音频文件的访问"""
     from flask import send_from_directory
+    import os
+    
+    # 确保文件存在且安全
+    file_path = os.path.join(TEMP_DIR, filename)
+    if not os.path.exists(file_path):
+        logging.error(f"Temp file not found: {file_path}")
+        return "File not found", 404
+    
+    # 安全检查：确保文件在临时目录内
+    if not os.path.abspath(file_path).startswith(os.path.abspath(TEMP_DIR)):
+        logging.error(f"Security violation: file path outside temp directory: {file_path}")
+        return "Access denied", 403
+    
+    logging.info(f"Serving temp file: {file_path}")
     return send_from_directory(TEMP_DIR, filename)
 
 @meeting_minutes_bp.route('/')
@@ -569,108 +583,39 @@ def splice_audio():
         if combined_audio is None:
             return jsonify({'error': '没有成功加载任何音频片段'}), 500
         
-        # 获取ASR优化参数
-        enable_asr_optimization = data.get('enable_asr_optimization', False)
-        asr_optimization_params = data.get('asr_optimization_params', {})
-        
-        # 如果启用ASR优化，对拼接后的音频进行优化处理
-        if enable_asr_optimization and asr_optimization_params:
-            logging.info("Applying ASR optimization to spliced audio...")
-            
-            # 获取优化参数，设置默认值
-        normalize_audio = asr_optimization_params.get('normalize_audio', False)
-        remove_silence = asr_optimization_params.get('remove_silence', False)
-        enhance_volume = asr_optimization_params.get('enhance_volume', False)
-        compress_audio = asr_optimization_params.get('compress_audio', False)
-        target_sample_rate = asr_optimization_params.get('target_sample_rate', 24000)
-            
-        try:
-            # 1. 转换为单声道
-            if combined_audio.channels > 1:
-                combined_audio = combined_audio.set_channels(1)
-                logging.info("Converted to mono channel")
-            
-            # 2. 调整采样率
-            if combined_audio.frame_rate != target_sample_rate:
-                combined_audio = combined_audio.set_frame_rate(target_sample_rate)
-                logging.info(f"Adjusted sample rate to {target_sample_rate}Hz")
-            
-            # 3. 音频标准化
-            if normalize_audio:
-                combined_audio = combined_audio.normalize()
-                logging.info("Applied audio normalization")
-            
-            # 4. 音量增强（如果RMS较低）
-            if enhance_volume:
-                rms = combined_audio.rms
-                if rms < 1000:  # 如果音量较低
-                    gain = 20.0 * math.log10(3000.0 / rms)  # 计算增益
-                    gain = min(gain, 20)  # 限制最大增益为20dB
-                    combined_audio = combined_audio + gain
-                    logging.info(f"Applied volume enhancement: +{gain:.1f}dB")
-            
-            # 5. 动态范围压缩
-            if compress_audio:
-                combined_audio = combined_audio.compress_dynamic_range(
-                    threshold=-20.0,
-                    ratio=4.0,
-                    attack=5.0,
-                    release=50.0
-                )
-                logging.info("Applied dynamic range compression")
-            
-            # 6. 去除静音段
-            if remove_silence:
-                # 检测并移除静音段
-                chunks = silence.split_on_silence(
-                    combined_audio,
-                    min_silence_len=1000,  # 最小静音长度1秒
-                    silence_thresh=combined_audio.dBFS - 16,  # 静音阈值
-                    keep_silence=200  # 保留200ms静音
-                )
-                if chunks:
-                    combined_audio = sum(chunks)
-                    logging.info("Removed silence segments")
-            
-            logging.info("ASR optimization completed successfully")
-            
-        except Exception as e:
-            logging.error(f"ASR optimization failed: {e}")
-            # 如果优化失败，继续使用原始拼接的音频
-            pass
+        # 移除ASR优化功能，这部分将在前端通过optimizeAudioForASR()函数处理
         
         # 生成拼接后的文件名
         spliced_filename = f"spliced_audio_{uuid.uuid4().hex[:8]}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.mp3"
         spliced_path = os.path.join(TEMP_DIR, spliced_filename)
         
         # 导出拼接后的音频
-        # 使用统一的比特率策略
-        export_bitrate = get_export_bitrate(enable_asr_optimization, asr_optimization_params)
-        combined_audio.export(spliced_path, format="mp3", bitrate=export_bitrate)
+        # 使用默认比特率，因为ASR优化已移除
+        combined_audio.export(spliced_path, format="mp3", bitrate="128k")
         
         # 获取拼接后的文件信息
         spliced_size = os.path.getsize(spliced_path)
         total_duration = len(combined_audio) / 1000  # 转换为秒
         
+        # 生成拼接ID
+        splice_id = f"splice_{uuid.uuid4().hex[:12]}"
+        
         logging.info(f"Audio splicing completed: {spliced_filename}, "
                     f"segments: {len(segments)}, "
                     f"total_duration: {total_duration}s, "
-                    f"file_size: {spliced_size} bytes")
+                    f"file_size: {spliced_size} bytes, "
+                    f"splice_id: {splice_id}")
         
-        # 构建响应消息
-        message = f'成功拼接{len(segments)}个音频片段'
-        if enable_asr_optimization:
-            message += '，并应用了ASR优化处理'
-        
+        # 返回拼接ID和基本信息，供前端后续处理
         return jsonify({
             'success': True,
+            'splice_id': splice_id,
             'spliced_filename': spliced_filename,
             'spliced_file_url': f"/meeting_minutes/static/temp/{spliced_filename}",
             'total_duration': total_duration,
             'file_size': spliced_size,
             'segments_count': len(segments),
-            'asr_optimized': enable_asr_optimization,
-            'message': message
+            'message': f'成功拼接{len(segments)}个音频片段'
         })
         
     except Exception as e:

@@ -1036,10 +1036,10 @@
                                 </label>
                                 <div class="help-text">点击设置ASR优化参数</div>
                             </div>
-                            
-                            <!-- ASR优化结果显示容器 -->
-                            <div id="optimizationResult" style="display: none; margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #28a745;"></div>
                         </div>
+                        
+                        <!-- ASR优化结果显示容器 -->
+                        <div id="optimizationResult" style="display: none; margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #28a745;"></div>
 
                         <div class="progress-container" id="processProgress" style="display: none;">
                             <div class="progress-bar">
@@ -1112,6 +1112,9 @@
                             </div>
                             <div class="help-text">点击设置ASR优化参数</div>
                         </div>
+                        
+                        <!-- 拼接音频ASR优化结果显示容器 -->
+                        <div id="spliceOptimizationResult" style="display: none; margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #28a745;"></div>
                     </div>
                     <div class="step-controls">
                         <div class="button-group">
@@ -1316,35 +1319,41 @@
             }
         }
 
-        // ASR优化预处理函数
-        async function optimizeAudioForASR() {
-            console.log('optimizeAudioForASR 函数被调用');
+        // ASR优化预处理函数（统一处理音频处理和拼接音频的优化）
+        async function optimizeAudioForASR(isSpliceMode = false) {
+            console.log(`optimizeAudioForASR 函数被调用，模式: ${isSpliceMode ? '拼接音频' : '音频处理'}`);
             
             if (!uploadedFile) {
                 throw new Error('没有可优化的音频文件');
             }
 
             try {
-                // 检查是否启用ASR优化
-                const enableASROptimization = document.getElementById('enableASROptimization').checked;
-                console.log('ASR优化开关状态 (在optimizeAudioForASR中):', enableASROptimization);
+                // 根据模式检查不同的开关状态
+                const enableOptimization = isSpliceMode 
+                    ? document.getElementById('enableSpliceASROptimization').checked
+                    : document.getElementById('enableASROptimization').checked;
                 
-                // 获取优化参数 - 使用统一的ASR设置
+                console.log(`${isSpliceMode ? '拼接音频' : '音频处理'}ASR优化开关状态:`, enableOptimization);
+                
+                // 根据模式获取不同的优化参数
                 let asrOptimizationParams = {};
-                if (enableASROptimization && window.asrSettings) {
-                    asrOptimizationParams = {
-                        normalize_audio: window.asrSettings.normalizeAudio,
-                        remove_silence: window.asrSettings.removeSilence,
-                        enhance_volume: window.asrSettings.enhanceVolume,
-                        compress_audio: window.asrSettings.compressAudio,
-                        target_sample_rate: parseInt(window.asrSettings.targetSampleRate)
-                    };
+                if (enableOptimization) {
+                    const settings = isSpliceMode ? window.spliceAsrSettings : window.asrSettings;
+                    if (settings) {
+                        asrOptimizationParams = {
+                            normalize_audio: settings.normalizeAudio,
+                            remove_silence: settings.removeSilence,
+                            enhance_volume: settings.enhanceVolume,
+                            compress_audio: settings.compressAudio,
+                            target_sample_rate: parseInt(settings.targetSampleRate)
+                        };
+                    }
                 }
 
                 // 创建FormData
                 const formData = new FormData();
                 formData.append('audio_file', uploadedFile);
-                formData.append('enable_asr_optimization', enableASROptimization);
+                formData.append('enable_asr_optimization', enableOptimization);
                 formData.append('asr_optimization_params', JSON.stringify(asrOptimizationParams));
 
                 const response = await fetch('/meeting_minutes/optimize_audio', {
@@ -1353,17 +1362,21 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error('音频优化失败');
+                    throw new Error(`${isSpliceMode ? '拼接音频' : '音频'}优化失败`);
                 }
 
                 const result = await response.json();
                 if (!result.success) {
-                    throw new Error(result.error || '音频优化失败');
+                    throw new Error(result.error || `${isSpliceMode ? '拼接音频' : '音频'}优化失败`);
                 }
 
-                // 显示优化结果
-                console.log('准备显示优化结果:', result);
-                displayOptimizationResult(result);
+                // 根据模式显示不同的优化结果
+                console.log(`准备显示${isSpliceMode ? '拼接音频' : '音频处理'}优化结果:`, result);
+                if (isSpliceMode) {
+                    displaySpliceOptimizationResult(result);
+                } else {
+                    displayOptimizationResult(result);
+                }
 
                 // 创建优化后的文件对象
                 const optimizedBlob = await fetch(result.optimized_file_url).then(r => r.blob());
@@ -1372,12 +1385,56 @@
                 // 替换原始文件
                 uploadedFile = optimizedFile;
                 
-                console.log('音频优化完成:', result);
+                console.log(`${isSpliceMode ? '拼接音频' : '音频'}优化完成:`, result);
                 
             } catch (error) {
-                console.error('音频优化失败:', error);
+                console.error(`${isSpliceMode ? '拼接音频' : '音频'}ASR优化失败:`, error);
                 throw error;
             }
+        }
+
+        // 显示拼接音频ASR优化结果
+        function displaySpliceOptimizationResult(result) {
+            console.log('displaySpliceOptimizationResult 函数被调用，参数:', result);
+            
+            const resultDiv = document.getElementById('spliceOptimizationResult');
+            console.log('spliceOptimizationResult 元素:', resultDiv);
+            
+            if (!resultDiv) {
+                console.error('找不到 spliceOptimizationResult 元素');
+                return;
+            }
+
+            const improvements = result.improvements || {};
+            
+            let html = `
+                <div class="optimization-result">
+                    <strong>✅ 拼接音频ASR优化完成</strong>
+                    <div class="optimization-improvements">
+                        <div class="improvement-item">
+                            <span>采样率:</span>
+                            <span class="improvement-value">${improvements.sample_rate_before || 'N/A'} → ${improvements.sample_rate_after || 'N/A'} Hz</span>
+                        </div>
+                        <div class="improvement-item">
+                            <span>声道:</span>
+                            <span class="improvement-value">${improvements.channels_before || 'N/A'} → ${improvements.channels_after || 'N/A'}</span>
+                        </div>
+                        <div class="improvement-item">
+                            <span>比特率:</span>
+                            <span class="improvement-value">${improvements.bitrate_before || 'N/A'} → ${improvements.bitrate_after || 'N/A'} kbps</span>
+                        </div>
+                        <div class="improvement-item">
+                            <span>文件大小:</span>
+                            <span class="improvement-value">${improvements.file_size_before || 'N/A'} → ${improvements.file_size_after || 'N/A'}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            resultDiv.innerHTML = html;
+            resultDiv.style.display = 'block';
+            
+            console.log('拼接音频ASR优化结果显示完成');
         }
 
         // 显示优化结果（兼容两种调用方式）
@@ -1682,6 +1739,7 @@
             }
             console.log('拼接音频URL:', splicedAudioUrl);
             console.log('拼接音频文件名:', splicedAudioFilename);
+            console.log('拼接音频Dify ID:', splicedAudioDifyId);
 
             document.getElementById('generateBtn').disabled = true;
             const resultArea = document.getElementById('minutesResult');
@@ -1690,51 +1748,11 @@
                 let fileId;
                 
                 // 文件优先级：拼接文件 > 处理后文件 > 原始文件
-                if (splicedAudioUrl && splicedAudioFilename) {
-                    // 1. 优先使用拼接后的文件
-                    resultArea.textContent = '正在上传拼接后的音频文件...';
-                    console.log('使用拼接后的文件:', splicedAudioFilename);
-                    
-                    // 需要先将拼接文件上传到Dify获取file_id
-                    try {
-                        const response = await fetch(splicedAudioUrl);
-                        const blob = await response.blob();
-                        const file = new File([blob], splicedAudioFilename, { type: 'audio/mpeg' });
-                        
-                        const formData = new FormData();
-                        formData.append('audio_file', file);
-                        
-                        const uploadResp = await fetch('/meeting_minutes/upload_audio', {
-                            method: 'POST',
-                            body: formData
-                        });
-
-                        if (!uploadResp.ok) {
-                            throw new Error('拼接音频文件上传失败');
-                        }
-
-                        const uploadData = await uploadResp.json();
-                        if (!uploadData.success || !uploadData.dify_file_id) {
-                            throw new Error('拼接音频文件上传失败: ' + (uploadData.error || '未知错误'));
-                        }
-                        
-                        fileId = uploadData.dify_file_id;
-                        resultArea.textContent = '拼接音频文件上传成功，正在生成会议纪要...';
-                    } catch (error) {
-                        console.error('拼接文件上传失败，尝试使用其他文件:', error);
-                        // 如果拼接文件上传失败，降级到处理后的文件
-                         if (uploadedFile && uploadedFile.dify_processed_file_id) {
-                             fileId = uploadedFile.dify_processed_file_id;
-                             resultArea.textContent = '使用处理后的音频文件生成会议纪要...';
-                             console.log('降级使用处理后文件的Dify ID:', fileId);
-                        } else if (uploadedFile && uploadedFile.dify_file_id) {
-                            fileId = uploadedFile.dify_file_id;
-                            resultArea.textContent = '使用原始音频文件生成会议纪要...';
-                            console.log('降级使用原始文件ID:', fileId);
-                        } else {
-                            throw new Error('没有可用的音频文件');
-                        }
-                    }
+                if (splicedAudioUrl && splicedAudioFilename && splicedAudioDifyId) {
+                    // 1. 优先使用拼接后的文件，直接使用已有的dify_file_id
+                    fileId = splicedAudioDifyId;
+                    resultArea.textContent = '使用拼接后的音频文件生成会议纪要...';
+                    console.log('使用拼接后文件的Dify ID:', fileId);
                 } else if (uploadedFile && uploadedFile.dify_processed_file_id) {
                     // 2. 使用处理后文件上传到Dify的ID
                     fileId = uploadedFile.dify_processed_file_id;
@@ -1896,6 +1914,7 @@
         let spliceSegments = [];
         let splicedAudioUrl = null;
         let splicedAudioFilename = null;
+        let splicedAudioDifyId = null; // 存储拼接音频的dify_file_id
 
         // 处理本地音频文件选择
         async function handleLocalAudioFiles(event) {
@@ -2148,75 +2167,163 @@
             document.getElementById('spliceProgressText').textContent = '正在准备拼接...';
 
             try {
+                // 第一步：拼接音频文件
                 document.getElementById('spliceProgressText').textContent = '正在拼接音频...';
-
-                // 执行拼接
-                const enableASROptimization = document.getElementById('enableSpliceASROptimization').checked;
                 
-                // 获取详细的ASR优化参数
-                let asrOptimizationParams = {};
-                if (enableASROptimization && window.spliceAsrSettings) {
-                    asrOptimizationParams = {
-                        normalize_audio: window.spliceAsrSettings.normalizeAudio,
-                        remove_silence: window.spliceAsrSettings.removeSilence,
-                        enhance_volume: window.spliceAsrSettings.enhanceVolume,
-                        compress_audio: window.spliceAsrSettings.compressAudio,
-                        target_sample_rate: parseInt(window.spliceAsrSettings.targetSampleRate)
-                    };
-                }
-                
-                const response = await fetch('/meeting_minutes/splice_audio', {
+                const spliceResponse = await fetch('/meeting_minutes/splice_audio', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         segments: spliceSegments.map(seg => ({
                             file_id: seg.file_id,
                             filename: seg.filename
-                        })),
-                        enable_asr_optimization: enableASROptimization,
-                        asr_optimization_params: asrOptimizationParams
+                        }))
                     })
                 });
 
-                if (!response.ok) {
+                if (!spliceResponse.ok) {
                     throw new Error('音频拼接失败');
                 }
 
-                const result = await response.json();
-                if (result.success) {
-                    // 构建完整的URL
-                    const fullUrl = window.location.origin + result.spliced_file_url;
-                    splicedAudioUrl = fullUrl;
-                    splicedAudioFilename = result.spliced_filename;
-                    document.getElementById('spliceProgressText').textContent = '拼接完成！';
-                    document.getElementById('downloadSpliceBtn').disabled = false;
-                    
-                    // 启用生成会议纪要按钮 - 拼接完成后可以生成纪要
-                    document.getElementById('generateBtn').disabled = false;
-                    
-                    // 显示预览
-                    const previewContainer = document.getElementById('splicePreview');
-                     const audioPlayer = document.getElementById('spliceAudioPlayer');
-                     audioPlayer.src = fullUrl;
-                     previewContainer.style.display = 'block';
-                     
-                     setTimeout(() => {
-                         document.getElementById('spliceProgress').style.display = 'none';
-                     }, 2000);
-                 } else {
-                     throw new Error(result.error || '拼接失败');
-                 }
+                const spliceResult = await spliceResponse.json();
+                if (!spliceResult.success) {
+                    throw new Error(spliceResult.error || '拼接失败');
+                }
 
-             } catch (error) {
-                 console.error('音频拼接失败:', error);
-                 document.getElementById('spliceProgressText').textContent = '拼接失败: ' + error.message;
-                 setTimeout(() => {
-                     document.getElementById('spliceProgress').style.display = 'none';
-                 }, 3000);
-             } finally {
-                 document.getElementById('spliceBtn').disabled = false;
-             }
-         }
+                // 构建完整的URL
+                let fullUrl = window.location.origin + spliceResult.spliced_file_url;
+                splicedAudioUrl = fullUrl;
+                splicedAudioFilename = spliceResult.spliced_filename;
+                
+                // 显示预览
+                const previewContainer = document.getElementById('splicePreview');
+                const audioPlayer = document.getElementById('spliceAudioPlayer');
+                audioPlayer.src = fullUrl;
+                previewContainer.style.display = 'block';
+                
+                // 第二步：ASR优化处理（如果启用）
+                const enableOptimization = document.getElementById('enableSpliceASROptimization').checked;
+                console.log('拼接音频ASR优化开关状态:', enableOptimization);
+                
+                if (enableOptimization) {
+                    document.getElementById('spliceProgressText').textContent = '正在进行ASR优化...';
+                    
+                    try {
+                        // 获取拼接后的文件并创建临时文件对象
+                        const splicedFileResponse = await fetch(fullUrl);
+                        const splicedFileBlob = await splicedFileResponse.blob();
+                        const tempSplicedFile = new File([splicedFileBlob], spliceResult.spliced_filename, { type: 'audio/mpeg' });
+                        
+                        // 临时保存原始文件
+                        const originalUploadedFile = uploadedFile;
+                        
+                        // 将拼接后的文件设置为当前文件，以便optimizeAudioForASR处理
+                        uploadedFile = tempSplicedFile;
+                        
+                        // 调用拼接音频ASR优化函数
+                        await optimizeAudioForASR(true);
+                        
+                        // 获取优化后的文件信息
+                        const optimizedFileBlob = uploadedFile;
+                        
+                        // 创建优化后文件的临时URL（用于后续上传）
+                        fullUrl = URL.createObjectURL(optimizedFileBlob);
+                        spliceResult.spliced_filename = uploadedFile.name;
+                        
+                        // 恢复原始文件引用
+                        uploadedFile = originalUploadedFile;
+                        
+                        // 更新预览播放器
+                        audioPlayer.src = fullUrl;
+                        
+                        console.log('ASR优化完成');
+                        
+                    } catch (optimizationError) {
+                        console.error('ASR优化失败:', optimizationError);
+                        document.getElementById('spliceProgressText').textContent = 'ASR优化失败，使用拼接后的文件...';
+                        // 继续处理，不中断整个流程
+                    }
+                } else {
+                    console.log('ASR优化未启用，跳过优化步骤');
+                }
+                
+                // 创建最终的uploadedFile对象用于上传
+                uploadedFile = {
+                    filename: spliceResult.spliced_filename,
+                    url: fullUrl
+                };
+                
+                // 第三步：上传到Dify
+                document.getElementById('spliceProgressText').textContent = '正在上传到Dify...';
+                
+                // 获取拼接后的音频文件
+                const audioResponse = await fetch(fullUrl);
+                const audioBlob = await audioResponse.blob();
+                
+                // 创建FormData上传文件
+                const uploadFormData = new FormData();
+                uploadFormData.append('audio_file', audioBlob, spliceResult.spliced_filename);
+                
+                const uploadResponse = await fetch('/meeting_minutes/upload_processed_audio', {
+                    method: 'POST',
+                    body: uploadFormData
+                });
+
+                if (!uploadResponse.ok) {
+                    throw new Error('上传到Dify失败');
+                }
+
+                const uploadResult = await uploadResponse.json();
+                if (!uploadResult.success) {
+                    throw new Error(uploadResult.error || '上传到Dify失败');
+                }
+
+                // 更新uploadedFile对象，包含dify_file_id
+                uploadedFile.dify_file_id = uploadResult.dify_file_id;
+                
+                // 同时更新全局变量，供generateMinutes函数使用
+                splicedAudioDifyId = uploadResult.dify_file_id;
+                
+                document.getElementById('spliceProgressText').textContent = '处理完成！';
+                document.getElementById('downloadSpliceBtn').disabled = false;
+                
+                // 启用生成会议纪要按钮
+                document.getElementById('generateBtn').disabled = false;
+                
+                // 先保存当前会议纪要内容用于检查
+                const minutesResult = document.getElementById('minutesResult');
+                const currentContent = minutesResult ? minutesResult.textContent : '';
+                
+                // 更新会议纪要显示框的提示文本
+                document.getElementById('minutesResult').textContent = '音频拼接完成，可以生成会议纪要了！';
+                
+                // 检查是否已有实际的会议纪要内容，如果有则启用下载纪要按钮
+                if (currentContent && 
+                    !currentContent.includes('文件上传后即可生成会议纪要') &&
+                    !currentContent.includes('音频拼接完成，可以生成会议纪要了') &&
+                    currentContent.trim() !== '') {
+                    document.getElementById('downloadBtn').disabled = false;
+                }
+                
+                setTimeout(() => {
+                    document.getElementById('spliceProgress').style.display = 'none';
+                }, 2000);
+
+            } catch (error) {
+                console.error('音频处理失败:', error);
+                document.getElementById('spliceProgressText').textContent = '处理失败: ' + error.message;
+                
+                // 确保在错误情况下也禁用下载按钮
+                document.getElementById('downloadSpliceBtn').disabled = true;
+                document.getElementById('generateBtn').disabled = true;
+                
+                setTimeout(() => {
+                    document.getElementById('spliceProgress').style.display = 'none';
+                }, 3000);
+            } finally {
+                document.getElementById('spliceBtn').disabled = false;
+            }
+        }
 
          // 预览拼接效果
          async function previewSplice() {
@@ -2290,6 +2397,13 @@
             updateSpliceButtons();
             document.getElementById('splicePreview').style.display = 'none';
             document.getElementById('downloadSpliceBtn').disabled = true;
+            
+            // 清空ASR优化结果面板
+            const spliceOptimizationResult = document.getElementById('spliceOptimizationResult');
+            if (spliceOptimizationResult) {
+                spliceOptimizationResult.style.display = 'none';
+                spliceOptimizationResult.innerHTML = '';
+            }
         }
 
          // 格式化时长显示
@@ -2361,10 +2475,26 @@
              const spliceAsrTrigger = document.getElementById('spliceAsrOptimizationTrigger');
              if (spliceAsrTrigger) {
                  spliceAsrTrigger.addEventListener('click', function(e) {
+                     // 如果点击的是checkbox，不阻止默认行为
+                     if (e.target.type !== 'checkbox') {
+                         e.preventDefault();
+                         e.stopPropagation();
+                         openSpliceAsrModal();
+                     }
+                 });
+             }
+             
+             // 为拼接音频ASR优化帮助文本添加点击事件
+             const spliceHelpText = document.querySelector('#spliceAsrOptimizationTrigger').parentElement.nextElementSibling;
+             if (spliceHelpText && spliceHelpText.classList.contains('help-text')) {
+                 spliceHelpText.addEventListener('click', function(e) {
                      e.preventDefault();
                      e.stopPropagation();
                      openSpliceAsrModal();
                  });
+                 // 添加鼠标悬停样式
+                 spliceHelpText.style.cursor = 'pointer';
+                 spliceHelpText.style.color = '#007bff';
              }
 
              // 点击模态框背景关闭
