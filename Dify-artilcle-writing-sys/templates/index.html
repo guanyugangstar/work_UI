@@ -326,7 +326,15 @@
 
         function saveSVGPages(svgPages) {
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-            svgPages.forEach((svgContent, index) => {
+            
+            // 使用递归方式逐个下载，避免浏览器下载限制
+            function downloadNext(index) {
+                if (index >= svgPages.length) {
+                    console.log('所有SVG文件下载完成');
+                    return;
+                }
+                
+                const svgContent = svgPages[index];
                 const filename = `svg/page_${timestamp}_${index + 1}.svg`;
                 const blob = new Blob([svgContent], { type: 'image/svg+xml' });
                 const url = URL.createObjectURL(blob);
@@ -334,15 +342,23 @@
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = filename;
+                a.style.display = 'none';
                 document.body.appendChild(a);
                 a.click();
                 
-                // 清理
+                console.log(`下载第 ${index + 1} 个SVG文件: ${filename}`);
+                
+                // 清理并继续下载下一个文件
                 setTimeout(() => {
                     document.body.removeChild(a);
                     URL.revokeObjectURL(url);
+                    // 延迟500ms后下载下一个文件，避免浏览器限制
+                    setTimeout(() => downloadNext(index + 1), 500);
                 }, 100);
-            });
+            }
+            
+            // 开始下载第一个文件
+            downloadNext(0);
         }
         function extractSVGFromResponse(responseText) {
             console.log('原始响应内容:', responseText);
@@ -355,6 +371,7 @@
             ];
             
             const matches = [];
+            const processedSVGs = new Set(); // 用于去重
             
             for (const pattern of patterns) {
                 let match;
@@ -371,15 +388,22 @@
                     
                     // 确保SVG内容完整
                     if (svgContent.includes('<svg') && svgContent.includes('</svg>')) {
-                        matches.push(svgContent);
-                        console.log('提取到SVG内容:', svgContent.substring(0, 200) + '...');
+                        // 使用SVG内容的前200个字符作为唯一标识符进行去重
+                        const svgId = svgContent.substring(0, 200);
+                        if (!processedSVGs.has(svgId)) {
+                            processedSVGs.add(svgId);
+                            matches.push(svgContent);
+                            console.log('提取到SVG内容:', svgContent.substring(0, 200) + '...');
+                        } else {
+                            console.log('跳过重复的SVG内容');
+                        }
                     }
                 }
                 // 重置正则表达式的lastIndex
                 pattern.lastIndex = 0;
             }
             
-            console.log('总共提取到', matches.length, '个SVG');
+            console.log('总共提取到', matches.length, '个唯一SVG');
             return matches;
         }
 
