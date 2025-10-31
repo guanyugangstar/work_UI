@@ -38,8 +38,24 @@ document.addEventListener('DOMContentLoaded', function() {
         const recordId = rowData[primaryKeyIndex];
         console.log('准备删除记录:', recordId, '主键:', primaryKey);
         
+        // 智能删除策略：检查主键是否为空
+        let deletePayload = {
+            table_name: currentTableData.table_name
+        };
+        
+        let confirmMessage;
+        if (recordId && recordId.toString().trim()) {
+            // 主键不为空，使用主键删除
+            deletePayload.record_id = recordId;
+            confirmMessage = `确定要删除记录 "${recordId}" 吗？此操作不可撤销！`;
+        } else {
+            // 主键为空，使用行号删除
+            deletePayload.row_index = rowIndex;
+            confirmMessage = `该记录的主键为空，将使用行号(第${rowIndex + 1}行)进行删除。确定要删除吗？此操作不可撤销！`;
+        }
+        
         // 确认删除操作
-        const confirmed = confirm(`确定要删除记录 "${recordId}" 吗？此操作不可撤销！`);
+        const confirmed = confirm(confirmMessage);
         console.log('用户确认结果:', confirmed);
         
         if (!confirmed) {
@@ -47,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return; // 用户取消，直接返回，不执行任何删除操作
         }
         
-        console.log('用户确认删除，开始执行删除操作');
+        console.log('用户确认删除，开始执行删除操作，删除参数:', deletePayload);
         
         // 显示删除中的提示
         const deleteBtn = document.querySelector(`tr[data-row-index="${rowIndex}"] .delete-btn`);
@@ -66,10 +82,7 @@ document.addEventListener('DOMContentLoaded', function() {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-                table_name: currentTableData.table_name,
-                record_id: recordId
-            })
+            body: JSON.stringify(deletePayload)
         })
         .then(response => response.json())
         .then(result => {

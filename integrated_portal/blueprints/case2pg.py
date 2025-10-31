@@ -14,7 +14,7 @@ if case2pg_path not in sys.path:
 
 # 导入case2pg的功能模块并初始化数据库连接
 try:
-    from app.db.dao import query_table, check_table_exists, delete_record, get_table_primary_key, execute_query
+    from app.db.dao import query_table, check_table_exists, delete_record, get_table_primary_key, execute_query, delete_record_by_row_index, delete_record_by_conditions
     from app.services import guess_type, upload_file, workflow_response, forward_and_collect
     from app.config import API_URL, API_KEY, USER_ID
     from app.exceptions import DatabaseError, WorkflowError, FileUploadError, ExternalAPIError
@@ -53,6 +53,8 @@ except ImportError as e:
     def query_table(*args, **kwargs): return []
     def check_table_exists(*args, **kwargs): return False
     def delete_record(*args, **kwargs): return False
+    def delete_record_by_row_index(*args, **kwargs): return False
+    def delete_record_by_conditions(*args, **kwargs): return False
     def get_table_primary_key(*args, **kwargs): return None
     def execute_query(*args, **kwargs): return None
     def guess_type(*args, **kwargs): return None
@@ -376,7 +378,7 @@ def get_table_data():
         
         # 表格映射和类型映射
         table_mapping = {
-            'case_summary': '复议',
+            'case_summary': '诉讼',
             'reconsideration_summary': '复议', 
             'contract_summary': '合同'
         }
@@ -446,21 +448,38 @@ def delete_record_api():
         
         table_name = data.get('table_name')
         record_id = data.get('record_id')
+        row_index = data.get('row_index')
+        delete_conditions = data.get('delete_conditions')
         
         if not table_name:
             return error_response('表名不能为空', 400)
         
-        if not record_id:
-            return error_response('记录ID不能为空', 400)
+        # 智能删除策略：优先使用record_id，其次使用row_index，最后使用delete_conditions
+        if record_id:
+            delete_method = 'record_id'
+            delete_param = record_id
+        elif row_index is not None:
+            delete_method = 'row_index'
+            delete_param = row_index
+        elif delete_conditions:
+            delete_method = 'conditions'
+            delete_param = delete_conditions
+        else:
+            return error_response('必须提供record_id、row_index或delete_conditions中的一个', 400)
         
         if logger:
-            logger.info(f'删除记录 - 表: {table_name}, ID: {record_id}')
+            logger.info(f'删除记录 - 表: {table_name}, 方式: {delete_method}, 参数: {delete_param}')
         
         # 执行删除操作
         import time
         start_time = time.time()
         try:
-            deleted_count = delete_record(table_name, record_id)
+            if delete_method == 'record_id':
+                deleted_count = delete_record(table_name, record_id)
+            elif delete_method == 'row_index':
+                deleted_count = delete_record_by_row_index(table_name, row_index)
+            else:  # delete_method == 'conditions'
+                deleted_count = delete_record_by_conditions(table_name, delete_conditions)
             
             delete_duration = time.time() - start_time
             record_database_metric(delete_duration)
