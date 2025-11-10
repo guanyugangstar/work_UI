@@ -16,7 +16,7 @@ writing_bp = Blueprint(
 )
 # Dify API配置（建议用环境变量管理）
 DIFY_API_BASE_URL = os.environ.get('DIFY_API_BASE_URL', 'http://localhost/v1')
-DIFY_API_TOKEN = os.environ.get('DIFY_API_TOKEN', 'app-TnwFScShFVqoY0Y7kZl3Wr67')
+DIFY_API_TOKEN = os.environ.get('DIFY_API_TOKEN', 'app-C8SM64mhiX4oOqAXlsDei8Qu')
 
 # 文件类型映射
 EXT_TYPE_MAP = {
@@ -289,7 +289,7 @@ def generate_ppt():
     if not inputs or not user_id or not sys_query:
         return jsonify({'error': '参数缺失'}), 400
 
-    PPT_API_TOKEN = os.environ.get('PPT_API_TOKEN', 'app-r3zuSHgMkB2m139TZnwEyHKr')
+    PPT_API_TOKEN = os.environ.get('PPT_API_TOKEN', 'app-Dzut5URd5JGAAa1BFxkqpAdF')
 
     try:
         url = f"{DIFY_API_BASE_URL}/chat-messages"

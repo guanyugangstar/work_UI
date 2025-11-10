@@ -7,6 +7,8 @@ import tempfile
 import uuid
 from datetime import datetime
 import logging
+import subprocess
+import time
 
 # 检查音频处理依赖
 try:
@@ -29,7 +31,12 @@ meeting_minutes_bp = Blueprint(
 
 # Dify API配置
 DIFY_API_BASE_URL = os.environ.get('DIFY_API_BASE_URL', 'http://localhost/v1')
-DIFY_API_TOKEN = os.environ.get('DIFY_MEETING_MINUTES_TOKEN', 'app-dRc69RGQ1nCmo4d3aQuPb3Pa')
+DIFY_API_TOKEN = os.environ.get('DIFY_MEETING_MINUTES_TOKEN', 'app-Xice94iMpIOCqUz3yYigUe7g')
+
+# Qwen ASR 服务配置（仅在选择 Fun-asr 时按需启动）
+QWEN_ASR_HEALTH_URL = os.environ.get('QWEN_ASR_HEALTH_URL', 'http://127.0.0.1:7878/asr/health')
+QWEN_ASR_DIR = os.environ.get('QWEN_ASR_DIR', r'd:\code\qwen_asr')
+QWEN_ASR_START_BAT = os.environ.get('QWEN_ASR_START_BAT', 'autorun.bat')
 
 # 支持的音频格式
 SUPPORTED_AUDIO_FORMATS = ['.mp3', '.wav', '.m4a', '.aac', '.ogg', '.flac', '.wma']
@@ -38,6 +45,53 @@ MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
 # 临时文件存储目录
 TEMP_DIR = os.path.join(tempfile.gettempdir(), 'meeting_minutes')
 os.makedirs(TEMP_DIR, exist_ok=True)
+
+def ensure_qwen_asr_service(max_wait_seconds: int = 30) -> bool:
+    """确保 Qwen ASR 端口服务已启动并就绪。
+
+    行为：
+    1) 先检查健康检查路由 QWEN_ASR_HEALTH_URL 是否返回 200；如已运行直接返回。
+    2) 如未运行则在 QWEN_ASR_DIR 下执行 QWEN_ASR_START_BAT（等效于 `cd d:\code\qwen_asr ; .\autorun.bat`）。
+    3) 启动后轮询健康检查直到就绪或超时。
+
+    返回：True 表示服务就绪；否则抛出异常。
+    """
+    # Step 1: 健康检查（已在运行则跳过启动）
+    try:
+        resp = requests.get(QWEN_ASR_HEALTH_URL, timeout=2)
+        if resp.status_code == 200:
+            logging.info("Qwen ASR 服务已运行，无需启动。")
+            return True
+    except Exception as e:
+        logging.info(f"Qwen ASR 健康检查不可用，尝试启动服务: {e}")
+
+    # Step 2: 按需启动服务
+    try:
+        if not os.path.isdir(QWEN_ASR_DIR):
+            raise FileNotFoundError(f"Qwen ASR 目录不存在: {QWEN_ASR_DIR}")
+
+        # 使用 cmd /c 运行 bat 文件，工作目录设为 QWEN_ASR_DIR
+        subprocess.Popen([
+            'cmd', '/c', QWEN_ASR_START_BAT
+        ], cwd=QWEN_ASR_DIR, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+        logging.info(f"已在 {QWEN_ASR_DIR} 执行 {QWEN_ASR_START_BAT}，等待服务就绪...")
+
+        # Step 3: 轮询健康检查直到就绪或超时
+        start_ts = time.time()
+        while time.time() - start_ts < max_wait_seconds:
+            try:
+                resp = requests.get(QWEN_ASR_HEALTH_URL, timeout=2)
+                if resp.status_code == 200:
+                    logging.info("Qwen ASR 服务已就绪。")
+                    return True
+            except Exception:
+                pass
+            time.sleep(1)
+
+        raise TimeoutError("Qwen ASR 服务在等待时间内未就绪")
+    except Exception as e:
+        logging.error(f"启动 Qwen ASR 服务失败: {e}")
+        raise
 
 def get_export_bitrate(enable_asr_optimization=False, asr_optimization_params=None):
     """
@@ -344,8 +398,18 @@ def generate_minutes():
             try:
                 # 准备Dify API请求
                 url = f"{DIFY_API_BASE_URL}/chat-messages"
+                # 根据前端选择的模型决定本次请求使用的Token，默认使用现有的DIFY_API_TOKEN
+                selected_model = (additional_info or '').strip()
+                if selected_model == 'Fun-asr':
+                    token_for_request = 'app-chVN6oB7xHjZX7G9XoDlB8s2'
+                    # 仅在选择 Fun-asr 时按需启动 Qwen ASR 端口服务
+                    ensure_qwen_asr_service(max_wait_seconds=30)
+                elif selected_model == 'Performance-V2':
+                    token_for_request = 'app-Xice94iMpIOCqUz3yYigUe7g'
+                else:
+                    token_for_request = DIFY_API_TOKEN
                 headers = {
-                    'Authorization': f'Bearer {DIFY_API_TOKEN}',
+                    'Authorization': f'Bearer {token_for_request}',
                     'Content-Type': 'application/json'
                 }
                 
@@ -358,7 +422,7 @@ def generate_minutes():
                                 'transfer_method': 'local_file',
                                 'upload_file_id': file_id
                             },
-                        'Nunber_fo_participants': participants_count
+                        'Number_of_participants': participants_count
                     },
                     'query': '请分析这个音频文件并生成会议纪要',
                     'response_mode': 'streaming',

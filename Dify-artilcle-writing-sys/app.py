@@ -14,7 +14,7 @@ CORS(app, origins=['http://localhost:9000', 'http://127.0.0.1:9000'])
 
 # Dify API配置（建议用环境变量管理）
 DIFY_API_BASE_URL = 'http://localhost/v1'
-DIFY_API_TOKEN = os.environ.get('DIFY_API_TOKEN', 'app-TnwFScShFVqoY0Y7kZl3Wr67')
+DIFY_API_TOKEN = os.environ.get('DIFY_API_TOKEN', 'app-C8SM64mhiX4oOqAXlsDei8Qu')
 
 # 文件类型映射
 EXT_TYPE_MAP = {

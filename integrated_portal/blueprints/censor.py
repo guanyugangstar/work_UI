@@ -23,7 +23,7 @@ censor_bp = Blueprint(
 
 # Dify API配置
 DIFY_API_BASE_URL = os.environ.get('DIFY_API_BASE_URL', 'http://localhost/v1')
-DIFY_API_TOKEN = os.environ.get('DIFY_API_TOKEN', 'app-h396mRpdDGYuXJ0up68YBqQP')
+DIFY_API_TOKEN = os.environ.get('DIFY_API_TOKEN', 'app-sEbNmYngPfAoFLzJscWsIVPN')
 
 # 文件类型映射
 EXT_TYPE_MAP = {
